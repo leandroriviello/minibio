@@ -1,0 +1,259 @@
+"use client"
+
+import type React from "react"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Card } from "@/components/ui/card"
+import { Plus, Trash2, Upload } from "lucide-react"
+import { upload } from "@vercel/blob/client"
+
+interface SocialLink {
+  platform: string
+  url: string
+}
+
+interface CustomLink {
+  id: string
+  title: string
+  url: string
+}
+
+export default function CrearPage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+
+  // Form state
+  const [username, setUsername] = useState("")
+  const [displayName, setDisplayName] = useState("")
+  const [bio, setBio] = useState("")
+  const [profileImage, setProfileImage] = useState<string>("")
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([
+    { platform: "instagram", url: "" },
+    { platform: "tiktok", url: "" },
+    { platform: "twitter", url: "" },
+    { platform: "youtube", url: "" },
+    { platform: "linkedin", url: "" },
+    { platform: "email", url: "" },
+  ])
+  const [customLinks, setCustomLinks] = useState<CustomLink[]>([])
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    try {
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      })
+      setProfileImage(blob.url)
+    } catch (error) {
+      console.error("Error uploading image:", error)
+      alert("Error al subir la imagen")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const addCustomLink = () => {
+    setCustomLinks([...customLinks, { id: Date.now().toString(), title: "", url: "" }])
+  }
+
+  const removeCustomLink = (id: string) => {
+    setCustomLinks(customLinks.filter((link) => link.id !== id))
+  }
+
+  const updateCustomLink = (id: string, field: "title" | "url", value: string) => {
+    setCustomLinks(customLinks.map((link) => (link.id === id ? { ...link, [field]: value } : link)))
+  }
+
+  const updateSocialLink = (platform: string, url: string) => {
+    setSocialLinks(socialLinks.map((link) => (link.platform === platform ? { ...link, url } : link)))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!username || !displayName) {
+      alert("Por favor completa el nombre de usuario y nombre a mostrar")
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await fetch("/api/profiles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username,
+          display_name: displayName,
+          bio,
+          profile_image_url: profileImage,
+          social_links: Object.fromEntries(
+            socialLinks.filter((link) => link.url).map((link) => [link.platform, link.url]),
+          ),
+          custom_links: customLinks.filter((link) => link.title && link.url),
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Error al crear el perfil")
+      }
+
+      const data = await response.json()
+      router.push(`/${data.username}`)
+    } catch (error) {
+      console.error("Error:", error)
+      alert(error instanceof Error ? error.message : "Error al crear el perfil")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen p-4 md:p-8">
+      <div className="max-w-2xl mx-auto space-y-8">
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold">Crea tu minibio</h1>
+          <p className="text-muted-foreground">Personaliza tu página de perfil</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Profile Image */}
+          <Card className="p-6 space-y-4">
+            <Label>Foto de perfil</Label>
+            <div className="flex flex-col items-center gap-4">
+              {profileImage ? (
+                <div className="relative">
+                  <img
+                    src={profileImage || "/placeholder.svg"}
+                    alt="Profile"
+                    className="w-32 h-32 rounded-full object-cover border-4 border-white"
+                  />
+                </div>
+              ) : (
+                <div className="w-32 h-32 rounded-full bg-secondary flex items-center justify-center border-4 border-white">
+                  <Upload className="w-8 h-8 text-muted-foreground" />
+                </div>
+              )}
+              <div>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={uploading}
+                  className="cursor-pointer"
+                />
+                {uploading && <p className="text-sm text-muted-foreground mt-2">Subiendo...</p>}
+              </div>
+            </div>
+          </Card>
+
+          {/* Basic Info */}
+          <Card className="p-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Nombre de usuario *</Label>
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                placeholder="tunombre"
+                required
+              />
+              <p className="text-xs text-muted-foreground">Tu URL será: minibio.app/{username || "tunombre"}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="displayName">Nombre a mostrar *</Label>
+              <Input
+                id="displayName"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Tu Nombre"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bio">Biografía</Label>
+              <Textarea
+                id="bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Cuéntanos sobre ti..."
+                rows={3}
+              />
+            </div>
+          </Card>
+
+          {/* Social Links */}
+          <Card className="p-6 space-y-4">
+            <Label>Redes sociales</Label>
+            <div className="space-y-3">
+              {socialLinks.map((link) => (
+                <div key={link.platform} className="space-y-1">
+                  <Label htmlFor={link.platform} className="text-sm capitalize">
+                    {link.platform}
+                  </Label>
+                  <Input
+                    id={link.platform}
+                    value={link.url}
+                    onChange={(e) => updateSocialLink(link.platform, e.target.value)}
+                    placeholder={`https://...`}
+                  />
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Custom Links */}
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Enlaces personalizados</Label>
+              <Button type="button" variant="outline" size="sm" onClick={addCustomLink}>
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar enlace
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              {customLinks.map((link) => (
+                <div key={link.id} className="space-y-2 p-4 border border-border rounded-lg">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1 space-y-2">
+                      <Input
+                        value={link.title}
+                        onChange={(e) => updateCustomLink(link.id, "title", e.target.value)}
+                        placeholder="Título del enlace"
+                      />
+                      <Input
+                        value={link.url}
+                        onChange={(e) => updateCustomLink(link.id, "url", e.target.value)}
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeCustomLink(link.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Button type="submit" size="lg" className="w-full" disabled={loading}>
+            {loading ? "Creando..." : "Crear mi minibio"}
+          </Button>
+        </form>
+      </div>
+    </div>
+  )
+}
