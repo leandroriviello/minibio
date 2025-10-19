@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
+import Image, { type ImageLoader } from "next/image"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,17 +12,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
 import { Plus, Trash2, Upload } from "lucide-react"
 import { upload } from "@vercel/blob/client"
-
-interface SocialLink {
-  platform: string
-  url: string
-}
+import { createEmptySocialLinks, type SocialLinkFormValue } from "@/lib/social-links"
 
 interface CustomLink {
   id: string
   title: string
   url: string
 }
+
+const externalImageLoader: ImageLoader = ({ src }) => src
 
 export default function CrearPage() {
   const router = useRouter()
@@ -33,14 +32,7 @@ export default function CrearPage() {
   const [displayName, setDisplayName] = useState("")
   const [bio, setBio] = useState("")
   const [profileImage, setProfileImage] = useState<string>("")
-  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([
-    { platform: "instagram", url: "" },
-    { platform: "tiktok", url: "" },
-    { platform: "twitter", url: "" },
-    { platform: "youtube", url: "" },
-    { platform: "linkedin", url: "" },
-    { platform: "email", url: "" },
-  ])
+  const [socialLinks, setSocialLinks] = useState<SocialLinkFormValue[]>(createEmptySocialLinks)
   const [customLinks, setCustomLinks] = useState<CustomLink[]>([])
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,9 +125,13 @@ export default function CrearPage() {
             <div className="flex flex-col items-center gap-4">
               {profileImage ? (
                 <div className="relative">
-                  <img
-                    src={profileImage || "/placeholder.svg"}
+                  <Image
+                    src={profileImage}
                     alt="Profile"
+                    width={128}
+                    height={128}
+                    loader={externalImageLoader}
+                    unoptimized
                     className="w-32 h-32 rounded-full object-cover border-4 border-white"
                   />
                 </div>

@@ -1,21 +1,18 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
+import Image, { type ImageLoader } from "next/image"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { upload } from "@vercel/blob/client"
+import { ArrowLeft, Plus, Trash2, Upload } from "lucide-react"
+import { createEmptySocialLinks, type SocialLinkFormValue } from "@/lib/social-links"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card } from "@/components/ui/card"
-import { Plus, Trash2, Upload, ArrowLeft } from "lucide-react"
-import { upload } from "@vercel/blob/client"
-import Link from "next/link"
-
-interface SocialLink {
-  platform: string
-  url: string
-}
 
 interface CustomLink {
   id: string
@@ -29,8 +26,10 @@ interface Profile {
   bio: string | null
   profile_image_url: string | null
   social_links: Record<string, string>
-  custom_links: CustomLink[]
+  custom_links: Array<{ title: string; url: string }>
 }
+
+const externalImageLoader: ImageLoader = ({ src }) => src
 
 export default function EditarPage({ params }: { params: { username: string } }) {
   const router = useRouter()
@@ -42,14 +41,7 @@ export default function EditarPage({ params }: { params: { username: string } })
   const [displayName, setDisplayName] = useState("")
   const [bio, setBio] = useState("")
   const [profileImage, setProfileImage] = useState<string>("")
-  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([
-    { platform: "instagram", url: "" },
-    { platform: "tiktok", url: "" },
-    { platform: "twitter", url: "" },
-    { platform: "youtube", url: "" },
-    { platform: "linkedin", url: "" },
-    { platform: "email", url: "" },
-  ])
+  const [socialLinks, setSocialLinks] = useState<SocialLinkFormValue[]>(createEmptySocialLinks)
   const [customLinks, setCustomLinks] = useState<CustomLink[]>([])
 
   useEffect(() => {
@@ -66,7 +58,7 @@ export default function EditarPage({ params }: { params: { username: string } })
         setProfileImage(profile.profile_image_url || "")
 
         // Load social links
-        const loadedSocialLinks = socialLinks.map((link) => ({
+        const loadedSocialLinks = createEmptySocialLinks().map((link) => ({
           ...link,
           url: profile.social_links[link.platform] || "",
         }))
@@ -88,7 +80,7 @@ export default function EditarPage({ params }: { params: { username: string } })
     }
 
     fetchProfile()
-  }, [params.username])
+  }, [params.username, router])
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -146,7 +138,9 @@ export default function EditarPage({ params }: { params: { username: string } })
           social_links: Object.fromEntries(
             socialLinks.filter((link) => link.url).map((link) => [link.platform, link.url]),
           ),
-          custom_links: customLinks.filter((link) => link.title && link.url).map(({ id, ...link }) => link),
+          custom_links: customLinks
+            .filter((link) => link.title && link.url)
+            .map((link) => ({ title: link.title, url: link.url })),
         }),
       })
 
@@ -194,9 +188,13 @@ export default function EditarPage({ params }: { params: { username: string } })
             <div className="flex flex-col items-center gap-4">
               {profileImage ? (
                 <div className="relative">
-                  <img
-                    src={profileImage || "/placeholder.svg"}
+                  <Image
+                    src={profileImage}
                     alt="Profile"
+                    width={128}
+                    height={128}
+                    loader={externalImageLoader}
+                    unoptimized
                     className="w-32 h-32 rounded-full object-cover border-4 border-white"
                   />
                 </div>

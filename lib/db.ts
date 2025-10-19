@@ -1,6 +1,26 @@
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.NEON_POSTGRES_URL!)
+type NeonClient = ReturnType<typeof neon>
+
+let sqlClient: NeonClient | null = null
+
+function getSqlClient(): NeonClient {
+  if (sqlClient) {
+    return sqlClient
+  }
+
+  const connectionString =
+    process.env.DATABASE_URL ?? process.env.NEON_POSTGRES_URL ?? process.env.POSTGRES_URL
+
+  if (!connectionString) {
+    throw new Error(
+      "DATABASE_URL (or NEON_POSTGRES_URL / POSTGRES_URL) must be defined to connect to PostgreSQL.",
+    )
+  }
+
+  sqlClient = neon(connectionString)
+  return sqlClient
+}
 
 export interface CustomLink {
   title: string
@@ -27,6 +47,10 @@ async function initializeDatabase() {
   try {
     console.log("[v0] Inicializando base de datos...")
 
+    const sql = getSqlClient()
+
+    await sql`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`
+
     // Crear tabla profiles si no existe
     await sql`
       CREATE TABLE IF NOT EXISTS profiles (
@@ -48,10 +72,11 @@ async function initializeDatabase() {
     `
 
     console.log("[v0] Base de datos inicializada correctamente")
-    dbInitialized = true
   } catch (error) {
     console.error("[v0] Error inicializando base de datos:", error)
-    // No lanzamos el error para que la app pueda continuar
+    throw error
+  } finally {
+    dbInitialized = true
   }
 }
 
@@ -59,6 +84,7 @@ export async function getProfileByUsername(username: string): Promise<Profile | 
   await initializeDatabase()
 
   try {
+    const sql = getSqlClient()
     const result = await sql`
       SELECT * FROM profiles WHERE username = ${username}
     `
@@ -85,6 +111,7 @@ export async function createProfile(data: {
   await initializeDatabase()
 
   try {
+    const sql = getSqlClient()
     const existing = await sql`
       SELECT id FROM profiles WHERE username = ${data.username}
     `
@@ -126,6 +153,7 @@ export async function updateProfile(
   await initializeDatabase()
 
   try {
+    const sql = getSqlClient()
     const existing = await sql`
       SELECT id FROM profiles WHERE username = ${username}
     `

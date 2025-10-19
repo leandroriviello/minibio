@@ -1,4 +1,6 @@
 import type React from "react"
+import Image, { type ImageLoader } from "next/image"
+import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -28,6 +30,8 @@ const socialIcons: Record<string, React.ReactNode> = {
 
 const RESERVED_ROUTES = ["crear", "editar", "api", "admin", "_next", "favicon.ico"]
 
+const externalImageLoader: ImageLoader = ({ src }) => src
+
 export default async function ProfilePage({ params }: { params: { username: string } }) {
   if (RESERVED_ROUTES.includes(params.username)) {
     redirect("/crear")
@@ -46,7 +50,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
   }
 
   const socialLinks: SocialLink[] = Object.entries(profile.social_links || {})
-    .filter(([_, url]) => url)
+    .filter(([, url]) => url)
     .map(([platform, url]) => ({
       platform,
       url,
@@ -57,19 +61,21 @@ export default async function ProfilePage({ params }: { params: { username: stri
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 p-4 md:p-8">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex justify-end">
-          <a href={`/editar/${profile.username}`}>
-            <Button variant="outline" size="sm">
-              Editar perfil
-            </Button>
-          </a>
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/editar/${profile.username}`}>Editar perfil</Link>
+          </Button>
         </div>
 
         {/* Profile Header */}
         <Card className="p-8 text-center space-y-4">
           {profile.profile_image_url ? (
-            <img
-              src={profile.profile_image_url || "/placeholder.svg"}
+            <Image
+              src={profile.profile_image_url}
               alt={profile.display_name}
+              width={128}
+              height={128}
+              loader={externalImageLoader}
+              unoptimized
               className="w-32 h-32 rounded-full object-cover mx-auto border-4 border-white shadow-lg"
             />
           ) : (
@@ -130,11 +136,9 @@ export default async function ProfilePage({ params }: { params: { username: stri
         {/* Footer */}
         <div className="text-center py-6">
           <p className="text-sm text-muted-foreground mb-3">¿Quieres tu propia minibio?</p>
-          <a href="/">
-            <Button variant="outline" size="sm">
-              Crear la mía
-            </Button>
-          </a>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/">Crear la mía</Link>
+          </Button>
         </div>
       </div>
     </div>
