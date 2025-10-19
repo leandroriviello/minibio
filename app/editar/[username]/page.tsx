@@ -1,18 +1,18 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState } from "react"
+import { use, useEffect, useState } from "react"
 import Image, { type ImageLoader } from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { upload } from "@vercel/blob/client"
 import { ArrowLeft, Plus, Trash2, Upload } from "lucide-react"
-import { createEmptySocialLinks, type SocialLinkFormValue } from "@/lib/social-links"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { fileToDataUrl } from "@/lib/files"
+import { createEmptySocialLinks, type SocialLinkFormValue } from "@/lib/social-links"
 
 interface CustomLink {
   id: string
@@ -31,7 +31,8 @@ interface Profile {
 
 const externalImageLoader: ImageLoader = ({ src }) => src
 
-export default function EditarPage({ params }: { params: { username: string } }) {
+export default function EditarPage({ params }: { params: Promise<{ username: string }> }) {
+  const { username } = use(params)
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -47,7 +48,7 @@ export default function EditarPage({ params }: { params: { username: string } })
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch(`/api/profiles?username=${params.username}`)
+        const response = await fetch(`/api/profiles?username=${username}`)
         if (!response.ok) {
           throw new Error("Perfil no encontrado")
         }
@@ -80,22 +81,24 @@ export default function EditarPage({ params }: { params: { username: string } })
     }
 
     fetchProfile()
-  }, [params.username, router])
+  }, [username, router])
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
+    if (file.size > 2 * 1024 * 1024) {
+      alert("La imagen debe pesar menos de 2MB")
+      return
+    }
+
     setUploading(true)
     try {
-      const blob = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
-      })
-      setProfileImage(blob.url)
+      const dataUrl = await fileToDataUrl(file)
+      setProfileImage(dataUrl)
     } catch (error) {
-      console.error("Error uploading image:", error)
-      alert("Error al subir la imagen")
+      console.error("Error processing image:", error)
+      alert("Error al procesar la imagen")
     } finally {
       setUploading(false)
     }
@@ -131,7 +134,7 @@ export default function EditarPage({ params }: { params: { username: string } })
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: params.username,
+          username,
           display_name: displayName,
           bio,
           profile_image_url: profileImage,
@@ -149,7 +152,7 @@ export default function EditarPage({ params }: { params: { username: string } })
         throw new Error(error.error || "Error al actualizar el perfil")
       }
 
-      router.push(`/${params.username}`)
+      router.push(`/${username}`)
     } catch (error) {
       console.error("Error:", error)
       alert(error instanceof Error ? error.message : "Error al actualizar el perfil")
@@ -170,7 +173,7 @@ export default function EditarPage({ params }: { params: { username: string } })
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-2xl mx-auto space-y-8">
         <div className="flex items-center gap-4">
-          <Link href={`/${params.username}`}>
+          <Link href={`/${username}`}>
             <Button variant="ghost" size="icon">
               <ArrowLeft className="w-5 h-5" />
             </Button>
@@ -211,7 +214,7 @@ export default function EditarPage({ params }: { params: { username: string } })
                   disabled={uploading}
                   className="cursor-pointer"
                 />
-                {uploading && <p className="text-sm text-muted-foreground mt-2">Subiendo...</p>}
+                {uploading && <p className="text-sm text-muted-foreground mt-2">Procesando imagen...</p>}
               </div>
             </div>
           </Card>
@@ -220,7 +223,7 @@ export default function EditarPage({ params }: { params: { username: string } })
           <Card className="p-6 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Nombre de usuario</Label>
-              <Input id="username" value={params.username} disabled className="bg-secondary" />
+              <Input id="username" value={username} disabled className="bg-secondary" />
               <p className="text-xs text-muted-foreground">El nombre de usuario no se puede cambiar</p>
             </div>
 
@@ -303,7 +306,7 @@ export default function EditarPage({ params }: { params: { username: string } })
           </Card>
 
           <div className="flex gap-3">
-            <Link href={`/${params.username}`} className="flex-1">
+            <Link href={`/${username}`} className="flex-1">
               <Button type="button" variant="outline" size="lg" className="w-full bg-transparent">
                 Cancelar
               </Button>

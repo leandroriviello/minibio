@@ -32,14 +32,16 @@ const RESERVED_ROUTES = ["crear", "editar", "api", "admin", "_next", "favicon.ic
 
 const externalImageLoader: ImageLoader = ({ src }) => src
 
-export default async function ProfilePage({ params }: { params: { username: string } }) {
-  if (RESERVED_ROUTES.includes(params.username)) {
+export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
+  const { username } = await params
+
+  if (RESERVED_ROUTES.includes(username)) {
     redirect("/crear")
   }
 
   let profile
   try {
-    profile = await getProfileByUsername(params.username)
+    profile = await getProfileByUsername(username)
   } catch (error) {
     console.error("[v0] Error fetching profile:", error)
     notFound()
@@ -62,7 +64,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex justify-end">
           <Button asChild variant="outline" size="sm">
-            <Link href={`/editar/${profile.username}`}>Editar perfil</Link>
+            <Link href={`/editar/${username}`}>Editar perfil</Link>
           </Button>
         </div>
 

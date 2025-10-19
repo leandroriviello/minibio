@@ -41,6 +41,18 @@ export interface Profile {
 
 let dbInitialized = false
 
+function normalizeResult<T>(result: unknown): T[] {
+  if (Array.isArray(result)) {
+    return result as T[]
+  }
+
+  if (result && typeof result === "object" && "rows" in result && Array.isArray((result as { rows: unknown }).rows)) {
+    return (result as { rows: unknown[] }).rows as T[]
+  }
+
+  return []
+}
+
 async function initializeDatabase() {
   if (dbInitialized) return
 
@@ -89,11 +101,13 @@ export async function getProfileByUsername(username: string): Promise<Profile | 
       SELECT * FROM profiles WHERE username = ${username}
     `
 
-    if (result.length === 0) {
+    const rows = normalizeResult<Profile>(result)
+
+    if (rows.length === 0) {
       return null
     }
 
-    return result[0] as Profile
+    return rows[0]
   } catch (error) {
     console.error("[v0] Error fetching profile:", error)
     return null
@@ -116,7 +130,9 @@ export async function createProfile(data: {
       SELECT id FROM profiles WHERE username = ${data.username}
     `
 
-    if (existing.length > 0) {
+    const existingRows = normalizeResult<{ id: string }>(existing)
+
+    if (existingRows.length > 0) {
       throw new Error("Este nombre de usuario ya está en uso")
     }
 
@@ -133,7 +149,9 @@ export async function createProfile(data: {
       RETURNING *
     `
 
-    return result[0] as Profile
+    const rows = normalizeResult<Profile>(result)
+
+    return rows[0] ?? null
   } catch (error) {
     console.error("[v0] Error creating profile:", error)
     throw error
@@ -158,7 +176,9 @@ export async function updateProfile(
       SELECT id FROM profiles WHERE username = ${username}
     `
 
-    if (existing.length === 0) {
+    const existingRows = normalizeResult<{ id: string }>(existing)
+
+    if (existingRows.length === 0) {
       throw new Error("Perfil no encontrado")
     }
 
@@ -175,7 +195,9 @@ export async function updateProfile(
       RETURNING *
     `
 
-    return result[0] as Profile
+    const rows = normalizeResult<Profile>(result)
+
+    return rows[0] ?? null
   } catch (error) {
     console.error("[v0] Error updating profile:", error)
     throw error

@@ -7,7 +7,7 @@ Aplicación web creada con Next.js para generar páginas de presentación tipo �
 - **TypeScript** y ESLint configurados para mantener la calidad de código.
 - **Tailwind CSS** y componentes de la librería shadcn/ui.
 - Persistencia en **PostgreSQL**, con auto creación de tablas en el primer despliegue.
-- Subida de imágenes mediante **Vercel Blob** (requiere token read/write).
+- Las imágenes se codifican en base64 y se guardan directamente en PostgreSQL (sin servicios externos).
 
 ## Stack técnico
 - Node.js 18/20+
@@ -19,7 +19,6 @@ Aplicación web creada con Next.js para generar páginas de presentación tipo �
 ## Requisitos previos
 1. Node.js 18.18 o superior (se recomienda 20 LTS).
 2. PostgreSQL disponible (Railway, Neon u otro).
-3. Token `BLOB_READ_WRITE_TOKEN` generado en el dashboard de Vercel Blob (para permitir subidas desde Railway).
 
 ## Configuración local
 1. Instalar dependencias:
@@ -30,7 +29,7 @@ Aplicación web creada con Next.js para generar páginas de presentación tipo �
    ```bash
    cp .env.example .env.local
    ```
-3. Completar `.env.local` con la cadena `DATABASE_URL` de tu instancia PostgreSQL (o `NEON_POSTGRES_URL`), y el token `BLOB_READ_WRITE_TOKEN`.
+3. Completar `.env.local` con la cadena `DATABASE_URL` de tu instancia PostgreSQL (o `NEON_POSTGRES_URL` si tu proveedor usa ese nombre).
 4. Levantar el entorno de desarrollo:
    ```bash
    npm run dev
@@ -41,7 +40,6 @@ Aplicación web creada con Next.js para generar páginas de presentación tipo �
 | --- | --- |
 | `DATABASE_URL` | Cadena de conexión estándar de PostgreSQL. Railway la provee automáticamente al crear una base. |
 | `NEON_POSTGRES_URL` / `POSTGRES_URL` | Variables alternativas compatibles (fallback). Úsalas solo si tu proveedor las expone con esos nombres. |
-| `BLOB_READ_WRITE_TOKEN` | Token generado en [https://vercel.com/docs/storage/vercel-blob](https://vercel.com/docs/storage/vercel-blob). Habilita la subida de imágenes desde `/api/upload`. |
 
 ## Base de datos (PostgreSQL)
 La API crea la tabla `profiles` automáticamente en el primer request si el rol tiene permisos para:
@@ -73,10 +71,10 @@ El archivo `scripts/002_create_profiles_table_v2.sql` incluye índices y políti
 2. Configura los comandos:
    - **Build**: `npm run build`
    - **Start**: `npm run start`
-3. Añade estas variables en la sección *Variables*:
+3. Añade esta variable en la sección *Variables*:
    - `DATABASE_URL` (Railway la inyecta si agregas el plugin PostgreSQL).
-   - `BLOB_READ_WRITE_TOKEN` (desde Vercel Blob).
 4. Conecta un servicio PostgreSQL en Railway o enlaza uno existente. Railway entregará la cadena `DATABASE_URL`.
+   - Dentro de Railway, el host interno suele ser `postgres.railway.internal`.
 5. Ejecuta el script SQL (solo una vez) para habilitar `pgcrypto` y las tablas, desde el *Shell* de Railway:
    ```bash
    railway connect postgres
@@ -86,16 +84,14 @@ El archivo `scripts/002_create_profiles_table_v2.sql` incluye índices y políti
    Si prefieres no ejecutar el script manualmente, asegúrate de que tu rol tenga permisos para crear extensiones; la app se encargará del resto durante el primer request.
 
 ### Almacenamiento de imágenes
-El endpoint `/api/upload` usa `@vercel/blob`. Desde Railway:
-1. Genera un token read/write en Vercel.
-2. Copia el valor de `BLOB_READ_WRITE_TOKEN` a Railway.
-3. Opcionalmente, restringe el token a dominios específicos desde Vercel Blob.
+Las imágenes se procesan en el navegador, se codifican en base64 y se envían junto con el resto de los datos del perfil. El backend sólo guarda y sirve el texto codificado en la columna `profile_image_url`. Tené en cuenta que esto incrementa el tamaño de la fila; se recomienda limitar las imágenes a menos de 2 MB.
 
 ## Estructura principal
 ```
 app/                  # Rutas del App Router (landing, crear, editar, perfil público y APIs)
 components/ui/        # Componentes reutilizables (shadcn/ui)
 lib/db.ts             # Cliente de PostgreSQL y helpers de base de datos
+lib/files.ts          # Utilidades para manejo de archivos/imágenes en el cliente
 lib/social-links.ts   # Configuración de redes soportadas
 scripts/              # SQL para inicializar o actualizar la base
 styles/               # Archivos de estilos globales / tailwind
@@ -104,4 +100,4 @@ styles/               # Archivos de estilos globales / tailwind
 ## Próximos pasos sugeridos
 - Agregar autenticación para limitar quién puede actualizar cada perfil.
 - Implementar un panel administrativo y estadísticas de visitas.
-- Integrar una alternativa de almacenamiento si no se desea depender de Vercel Blob.
+- Implementar un almacenamiento externo si en el futuro necesitás archivos más pesados o CDN.
