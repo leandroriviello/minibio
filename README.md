@@ -8,6 +8,7 @@ Aplicación web creada con Next.js para generar páginas de presentación tipo �
 - **Tailwind CSS** y componentes de la librería shadcn/ui.
 - Persistencia en **PostgreSQL**, con auto creación de tablas en el primer despliegue.
 - Las imágenes se codifican en base64 y se guardan directamente en PostgreSQL (sin servicios externos).
+- Autenticación básica con correo/contraseña y sesiones firmadas en cookies HTTP-only.
 
 ## Stack técnico
 - Node.js 18/20+
@@ -41,6 +42,7 @@ Aplicación web creada con Next.js para generar páginas de presentación tipo �
 | `DATABASE_URL` | Cadena de conexión estándar de PostgreSQL. Railway la provee automáticamente al crear una base (también funcionan `NEON_POSTGRES_URL` / `POSTGRES_URL`). |
 | `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` | Alternativa si Railway expone las variables por separado; la app arma la conexión automáticamente. |
 | `PGSSLMODE` | Define si el cliente debe usar SSL (`disable` para conexiones internas como `postgres.railway.internal`). |
+| `AUTH_SECRET` | Cadena aleatoria (mínimo 32 caracteres) usada para firmar los tokens de sesión. |
 
 ## Base de datos (PostgreSQL)
 La API crea la tabla `profiles` automáticamente en el primer request si el rol tiene permisos para:
@@ -77,11 +79,12 @@ El archivo `scripts/002_create_profiles_table_v2.sql` incluye índices y políti
    - `PGSSLMODE=disable` si usas el host interno (`postgres.railway.internal`) para evitar negociar SSL.
 4. Conecta un servicio PostgreSQL en Railway o enlaza uno existente. Railway entregará la cadena `DATABASE_URL`.
    - Dentro de Railway, el host interno suele ser `postgres.railway.internal`.
-5. Ejecuta el script SQL (solo una vez) para habilitar `pgcrypto` y las tablas, desde el *Shell* de Railway:
+5. Ejecuta los scripts SQL (solo una vez) para habilitar `pgcrypto`, las tablas y la relación usuarios/perfiles, desde el *Shell* de Railway:
    ```bash
    railway connect postgres
    CREATE EXTENSION IF NOT EXISTS "pgcrypto";
    \i scripts/002_create_profiles_table_v2.sql;
+   \i scripts/003_create_users_table.sql;
    ```
    Si prefieres no ejecutar el script manualmente, asegúrate de que tu rol tenga permisos para crear extensiones; la app se encargará del resto durante el primer request.
 
@@ -92,7 +95,9 @@ Las imágenes se procesan en el navegador, se codifican en base64 y se envían j
 ```
 app/                  # Rutas del App Router (landing, crear, editar, perfil público y APIs)
 components/ui/        # Componentes reutilizables (shadcn/ui)
-lib/db.ts             # Cliente de PostgreSQL y helpers de base de datos
+lib/db.ts             # Cliente de PostgreSQL y helpers de base de datos / usuarios
+lib/auth.ts           # Utilidades para hash/verificación de contraseñas
+lib/session.ts        # Manejo de tokens y cookies de sesión
 lib/files.ts          # Utilidades para manejo de archivos/imágenes en el cliente
 lib/social-links.ts   # Configuración de redes soportadas
 scripts/              # SQL para inicializar o actualizar la base
@@ -100,6 +105,6 @@ styles/               # Archivos de estilos globales / tailwind
 ```
 
 ## Próximos pasos sugeridos
-- Agregar autenticación para limitar quién puede actualizar cada perfil.
-- Implementar un panel administrativo y estadísticas de visitas.
+- Implementar recuperación de contraseña y verificación por email.
+- Añadir límites de planes/personalización por usuario.
 - Implementar un almacenamiento externo si en el futuro necesitás archivos más pesados o CDN.

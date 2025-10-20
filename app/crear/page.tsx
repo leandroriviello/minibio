@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Image, { type ImageLoader } from "next/image"
 import { useRouter } from "next/navigation"
 import { Plus, Trash2, Upload } from "lucide-react"
@@ -26,6 +26,7 @@ export default function CrearPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(true)
 
   // Form state
   const [username, setUsername] = useState("")
@@ -34,6 +35,26 @@ export default function CrearPage() {
   const [profileImage, setProfileImage] = useState<string>("")
   const [socialLinks, setSocialLinks] = useState<SocialLinkFormValue[]>(createEmptySocialLinks)
   const [customLinks, setCustomLinks] = useState<CustomLink[]>([])
+
+  useEffect(() => {
+    const verifySession = async () => {
+      try {
+        const response = await fetch("/api/auth/session", { credentials: "include" })
+        if (!response.ok) {
+          router.replace("/auth?redirect=/crear")
+          return
+        }
+      } catch (error) {
+        console.error("Error verificando sesión:", error)
+        router.replace("/auth?redirect=/crear")
+        return
+      } finally {
+        setCheckingAuth(false)
+      }
+    }
+
+    void verifySession()
+  }, [router])
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -85,6 +106,7 @@ export default function CrearPage() {
       const response = await fetch("/api/profiles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           username,
           display_name: displayName,
@@ -98,6 +120,10 @@ export default function CrearPage() {
       })
 
       if (!response.ok) {
+        if (response.status === 401) {
+          router.replace("/auth?redirect=/crear")
+          return
+        }
         const error = await response.json()
         throw new Error(error.error || "Error al crear el perfil")
       }
@@ -110,6 +136,14 @@ export default function CrearPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Verificando sesión...</p>
+      </div>
+    )
   }
 
   return (

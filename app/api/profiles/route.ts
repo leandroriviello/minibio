@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server"
 import { getProfileByUsername, createProfile, updateProfile } from "@/lib/db"
+import { getCurrentUser } from "@/lib/session"
 
 export async function POST(request: Request) {
   try {
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { username, display_name, bio, profile_image_url, social_links, custom_links } = body
 
     const profile = await createProfile({
+      userId: user.id,
       username,
       display_name,
       bio,
@@ -47,6 +54,11 @@ export async function GET(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { username, display_name, bio, profile_image_url, social_links, custom_links } = body
 
@@ -55,12 +67,17 @@ export async function PUT(request: Request) {
     }
 
     const profile = await updateProfile(username, {
+      userId: user.id,
       display_name,
       bio,
       profile_image_url,
       social_links,
       custom_links,
     })
+
+    if (!profile) {
+      return NextResponse.json({ error: "Perfil no encontrado o sin permisos" }, { status: 404 })
+    }
 
     return NextResponse.json(profile)
   } catch (error) {

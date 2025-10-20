@@ -2,22 +2,29 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 
-const options = [
-  {
-    title: "Ya tengo cuenta",
-    description: "Ingresa con tu correo y contraseña para administrar tu minibio.",
-    href: "/auth/sign-in",
-    actionLabel: "Iniciar sesión",
-  },
-  {
-    title: "Soy nuevo en minibio",
-    description: "Crea una cuenta gratuita y diseña tu página en pocos pasos.",
-    href: "/auth/sign-up",
-    actionLabel: "Registrarme",
-  },
-]
+export default async function AuthLandingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect?: string }>
+}) {
+  const { redirect } = await searchParams
+  const target = redirect && redirect.startsWith("/") ? redirect : "/crear"
 
-export default function AuthLandingPage() {
+  const options = [
+    {
+      title: "Ya tengo cuenta",
+      description: "Ingresa con tu correo y contraseña para administrar tu minibio.",
+      href: `/auth/sign-in?redirect=${encodeURIComponent(target)}`,
+      actionLabel: "Iniciar sesión",
+    },
+    {
+      title: "Soy nuevo en minibio",
+      description: "Crea una cuenta gratuita y diseña tu página en pocos pasos.",
+      href: `/auth/sign-up?redirect=${encodeURIComponent(target)}`,
+      actionLabel: "Registrarme",
+    },
+  ]
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6">
       <div className="max-w-3xl w-full space-y-10">

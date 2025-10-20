@@ -27,6 +27,7 @@ interface Profile {
   profile_image_url: string | null
   social_links: Record<string, string>
   custom_links: Array<{ title: string; url: string }>
+  user_id: string | null
 }
 
 const externalImageLoader: ImageLoader = ({ src }) => src
@@ -37,6 +38,7 @@ export default function EditarPage(props: { params: Promise<{ username: string }
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [loadingProfile, setLoadingProfile] = useState(true)
+  const [checkingAuth, setCheckingAuth] = useState(true)
 
   // Form state
   const [displayName, setDisplayName] = useState("")
@@ -46,8 +48,17 @@ export default function EditarPage(props: { params: Promise<{ username: string }
   const [customLinks, setCustomLinks] = useState<CustomLink[]>([])
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       try {
+        const sessionRes = await fetch("/api/auth/session", { credentials: "include" })
+        if (!sessionRes.ok) {
+          setCheckingAuth(false)
+          setLoadingProfile(false)
+          router.replace(`/auth?redirect=/editar/${username}`)
+          return
+        }
+        setCheckingAuth(false)
+
         const response = await fetch(`/api/profiles?username=${username}`)
         if (!response.ok) {
           throw new Error("Perfil no encontrado")
@@ -80,7 +91,7 @@ export default function EditarPage(props: { params: Promise<{ username: string }
       }
     }
 
-    fetchProfile()
+    void fetchData()
   }, [username, router])
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,6 +144,7 @@ export default function EditarPage(props: { params: Promise<{ username: string }
       const response = await fetch("/api/profiles", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           username,
           display_name: displayName,
@@ -148,6 +160,10 @@ export default function EditarPage(props: { params: Promise<{ username: string }
       })
 
       if (!response.ok) {
+        if (response.status === 401) {
+          router.replace(`/auth?redirect=/editar/${username}`)
+          return
+        }
         const error = await response.json()
         throw new Error(error.error || "Error al actualizar el perfil")
       }
@@ -161,10 +177,10 @@ export default function EditarPage(props: { params: Promise<{ username: string }
     }
   }
 
-  if (loadingProfile) {
+  if (checkingAuth || loadingProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Cargando perfil...</p>
+        <p className="text-muted-foreground">{checkingAuth ? "Verificando sesión..." : "Cargando perfil..."}</p>
       </div>
     )
   }

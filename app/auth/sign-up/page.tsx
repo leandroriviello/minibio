@@ -1,25 +1,50 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export default function SignUpPage() {
+function SignUpForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get("redirect") ?? "/crear"
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setError(null)
     setLoading(true)
-    setTimeout(() => {
+
+    const formData = new FormData(event.currentTarget)
+    const name = String(formData.get("name") || "").trim()
+    const email = String(formData.get("email") || "").trim()
+    const password = String(formData.get("password") || "")
+
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name, email, password }),
+      })
+
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string }
+        throw new Error(data.error || "No se pudo crear la cuenta")
+      }
+
+      router.push(redirectTo)
+      router.refresh()
+    } catch (err) {
+      console.error("Error al crear cuenta:", err)
+      setError(err instanceof Error ? err.message : "No se pudo crear la cuenta")
       setLoading(false)
-      alert("El registro estará disponible pronto. Gracias por tu interés en minibio.")
-      router.push("/auth")
-    }, 400)
+    }
   }
 
   return (
@@ -35,18 +60,27 @@ export default function SignUpPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="name">Nombre completo</Label>
-            <Input id="name" placeholder="Tu nombre" required />
+            <Input id="name" name="name" placeholder="Tu nombre" required />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="email">Correo electrónico</Label>
-            <Input id="email" type="email" placeholder="tu@correo.com" required />
+            <Input id="email" name="email" type="email" placeholder="tu@correo.com" required />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="password">Contraseña</Label>
-            <Input id="password" type="password" placeholder="******" minLength={6} required />
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="******"
+              minLength={6}
+              required
+            />
           </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Creando cuenta..." : "Registrarme"}
@@ -55,11 +89,28 @@ export default function SignUpPage() {
 
         <div className="text-center text-sm text-muted-foreground">
           ¿Ya tenés cuenta?{" "}
-          <Link href="/auth/sign-in" className="text-primary underline underline-offset-4">
+          <Link
+            href={`/auth/sign-in?redirect=${encodeURIComponent(redirectTo)}`}
+            className="text-primary underline underline-offset-4"
+          >
             Iniciar sesión
           </Link>
         </div>
       </Card>
     </div>
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      }
+    >
+      <SignUpForm />
+    </Suspense>
   )
 }

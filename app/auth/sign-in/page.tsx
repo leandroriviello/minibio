@@ -1,25 +1,49 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get("redirect") ?? "/crear"
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setError(null)
     setLoading(true)
-    setTimeout(() => {
+
+    const formData = new FormData(event.currentTarget)
+    const email = String(formData.get("email") || "").trim()
+    const password = String(formData.get("password") || "")
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string }
+        throw new Error(data.error || "No se pudo iniciar sesión")
+      }
+
+      router.push(redirectTo)
+      router.refresh()
+    } catch (err) {
+      console.error("Error al iniciar sesión:", err)
+      setError(err instanceof Error ? err.message : "No se pudo iniciar sesión")
       setLoading(false)
-      alert("Autenticación próximamente. Por ahora dirígete al registro para crear tu cuenta.")
-      router.push("/auth")
-    }, 400)
+    }
   }
 
   return (
@@ -35,13 +59,15 @@ export default function SignInPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="email">Correo electrónico</Label>
-            <Input id="email" type="email" placeholder="tu@correo.com" required />
+            <Input id="email" name="email" type="email" placeholder="tu@correo.com" required />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="password">Contraseña</Label>
-            <Input id="password" type="password" placeholder="******" required />
+            <Input id="password" name="password" type="password" placeholder="******" required />
           </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Ingresando..." : "Ingresar"}
@@ -50,11 +76,28 @@ export default function SignInPage() {
 
         <div className="text-center text-sm text-muted-foreground">
           ¿Aún no tenés cuenta?{" "}
-          <Link href="/auth/sign-up" className="text-primary underline underline-offset-4">
+          <Link
+            href={`/auth/sign-up?redirect=${encodeURIComponent(redirectTo)}`}
+            className="text-primary underline underline-offset-4"
+          >
             Registrate
           </Link>
         </div>
       </Card>
     </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      }
+    >
+      <SignInForm />
+    </Suspense>
   )
 }
