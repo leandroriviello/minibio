@@ -38,8 +38,8 @@ Aplicación web creada con Next.js para generar páginas de presentación tipo �
 ## Variables de entorno
 | Variable | Descripción |
 | --- | --- |
-| `DATABASE_URL` | Cadena de conexión estándar de PostgreSQL. Railway la provee automáticamente al crear una base. |
-| `NEON_POSTGRES_URL` / `POSTGRES_URL` | Variables alternativas compatibles (fallback). Úsalas solo si tu proveedor las expone con esos nombres. |
+| `DATABASE_URL` | Cadena de conexión estándar de PostgreSQL. Railway la provee automáticamente al crear una base (también funcionan `NEON_POSTGRES_URL` / `POSTGRES_URL`). |
+| `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` | Alternativa si Railway expone las variables por separado; la app arma la conexión automáticamente. |
 | `PGSSLMODE` | Define si el cliente debe usar SSL (`disable` para conexiones internas como `postgres.railway.internal`). |
 
 ## Base de datos (PostgreSQL)
@@ -73,7 +73,7 @@ El archivo `scripts/002_create_profiles_table_v2.sql` incluye índices y políti
    - **Build**: `npm run build`
    - **Start**: `npm run start`
 3. Añade estas variables en la sección *Variables*:
-   - `DATABASE_URL` (Railway la inyecta si agregas el plugin PostgreSQL).
+   - `DATABASE_URL` (o mapea `PGHOST`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`, etc. si Railway te los muestra por separado).
    - `PGSSLMODE=disable` si usas el host interno (`postgres.railway.internal`) para evitar negociar SSL.
 4. Conecta un servicio PostgreSQL en Railway o enlaza uno existente. Railway entregará la cadena `DATABASE_URL`.
    - Dentro de Railway, el host interno suele ser `postgres.railway.internal`.

@@ -1,33 +1,55 @@
-import { Pool } from "pg"
+import { Pool, type PoolConfig } from "pg"
 
 let pool: Pool | null = null
+
+function resolveDatabaseConfig(): PoolConfig {
+  const connectionString =
+    process.env.DATABASE_URL ?? process.env.NEON_POSTGRES_URL ?? process.env.POSTGRES_URL
+
+  const disableSSLFlag = (process.env.PGSSLMODE ?? "").toLowerCase() === "disable"
+
+  if (connectionString) {
+    const lowerCasedUrl = connectionString.toLowerCase()
+    const shouldDisableSSL =
+      disableSSLFlag ||
+      lowerCasedUrl.includes("localhost") ||
+      lowerCasedUrl.includes("127.0.0.1") ||
+      lowerCasedUrl.includes("railway.internal")
+
+    return {
+      connectionString,
+      ssl: shouldDisableSSL ? false : { rejectUnauthorized: false },
+    }
+  }
+
+  const host = process.env.PGHOST
+  const port = process.env.PGPORT ? Number(process.env.PGPORT) : undefined
+  const database = process.env.PGDATABASE
+  const user = process.env.PGUSER
+  const password = process.env.PGPASSWORD
+
+  if (host && database && user) {
+    return {
+      host,
+      port,
+      database,
+      user,
+      password,
+      ssl: disableSSLFlag ? false : { rejectUnauthorized: false },
+    }
+  }
+
+  throw new Error(
+    "DATABASE_URL (o NEON_POSTGRES_URL / POSTGRES_URL / PGHOST, PGDATABASE, PGUSER) debe estar definida para conectar a PostgreSQL.",
+  )
+}
 
 function getPool(): Pool {
   if (pool) {
     return pool
   }
 
-  const connectionString =
-    process.env.DATABASE_URL ?? process.env.NEON_POSTGRES_URL ?? process.env.POSTGRES_URL
-
-  if (!connectionString) {
-    throw new Error(
-      "DATABASE_URL (o NEON_POSTGRES_URL / POSTGRES_URL) debe estar definida para conectar a PostgreSQL.",
-    )
-  }
-
-  const lowerCasedUrl = connectionString.toLowerCase()
-  const disableSSLFlag = (process.env.PGSSLMODE ?? "").toLowerCase() === "disable"
-  const shouldDisableSSL =
-    disableSSLFlag ||
-    lowerCasedUrl.includes("localhost") ||
-    lowerCasedUrl.includes("127.0.0.1") ||
-    lowerCasedUrl.includes("railway.internal")
-
-  pool = new Pool({
-    connectionString,
-    ssl: shouldDisableSSL ? false : { rejectUnauthorized: false },
-  })
+  pool = new Pool(resolveDatabaseConfig())
 
   pool.on("error", (error) => {
     console.error("[minibio] Error en la conexión de PostgreSQL:", error)

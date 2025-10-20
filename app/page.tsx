@@ -11,7 +11,7 @@ export default function HomePage() {
         </div>
 
         <div className="flex flex-col gap-4">
-          <Link href="/crear">
+          <Link href="/auth">
             <Button size="lg" className="w-full">
               Crear mi minibio
             </Button>
