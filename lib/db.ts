@@ -201,6 +201,19 @@ export async function getProfileByUsername(username: string): Promise<Profile | 
   }
 }
 
+export async function getProfileByUserId(userId: string): Promise<Profile | null> {
+  await initializeDatabase()
+
+  try {
+    const pool = getPool()
+    const { rows } = await pool.query<Profile>(`SELECT * FROM profiles WHERE user_id = $1`, [userId])
+    return rows[0] ?? null
+  } catch (error) {
+    console.error("[v0] Error fetching profile by user id:", error)
+    return null
+  }
+}
+
 export async function createProfile(data: {
   userId: string | null
   username: string

@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import type React from "react"
-import { use, useEffect, useState } from "react"
+import { use, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Plus, Trash2, Upload } from "lucide-react"
@@ -37,6 +37,7 @@ export default function EditarPage(props: { params: Promise<{ username: string }
   const [uploading, setUploading] = useState(false)
   const [loadingProfile, setLoadingProfile] = useState(true)
   const [checkingAuth, setCheckingAuth] = useState(true)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   // Form state
   const [displayName, setDisplayName] = useState("")
@@ -204,22 +205,31 @@ export default function EditarPage(props: { params: Promise<{ username: string }
             <Label>Foto de perfil</Label>
             <div className="flex flex-col items-center gap-4">
               {profileImage ? (
-                <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring"
+                >
                   <img
                     src={profileImage}
                     alt="Profile"
                     width={128}
                     height={128}
-                    className="w-32 h-32 rounded-full object-cover border-4 border-white"
+                    className="w-full h-full object-cover"
                   />
-                </div>
+                </button>
               ) : (
-                <div className="w-32 h-32 rounded-full bg-secondary flex items-center justify-center border-4 border-white">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-32 h-32 rounded-full bg-secondary flex items-center justify-center border-4 border-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring"
+                >
                   <Upload className="w-8 h-8 text-muted-foreground" />
-                </div>
+                </button>
               )}
               <div className="w-full">
                 <Input
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}

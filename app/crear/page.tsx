@@ -3,7 +3,7 @@
 import type React from "react"
 
 /* eslint-disable @next/next/no-img-element */
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, Trash2, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,8 @@ export default function CrearPage() {
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
+  const [loadingProfile, setLoadingProfile] = useState(true)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   // Form state
   const [username, setUsername] = useState("")
@@ -48,6 +50,34 @@ export default function CrearPage() {
         return
       } finally {
         setCheckingAuth(false)
+      }
+
+      try {
+        const profileRes = await fetch("/api/profiles?mine=true", { credentials: "include" })
+        if (profileRes.ok) {
+          const profile = (await profileRes.json()) as {
+            username: string
+            display_name: string
+            bio: string | null
+            profile_image_url: string | null
+            social_links: Record<string, string>
+            custom_links: Array<{ title: string; url: string }>
+          }
+          setUsername(profile.username)
+          setDisplayName(profile.display_name)
+          setBio(profile.bio || "")
+          setProfileImage(profile.profile_image_url || "")
+          setSocialLinks((prev) =>
+            prev.map((link) => ({ ...link, url: profile.social_links[link.platform] || "" })),
+          )
+          setCustomLinks(
+            (profile.custom_links || []).map((link, index) => ({ ...link, id: `${Date.now()}-${index}` })),
+          )
+        }
+      } catch (error) {
+        console.error("Error cargando perfil existente:", error)
+      } finally {
+        setLoadingProfile(false)
       }
     }
 
@@ -136,10 +166,12 @@ export default function CrearPage() {
     }
   }
 
-  if (checkingAuth) {
+  if (checkingAuth || loadingProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Verificando sesión...</p>
+        <p className="text-muted-foreground">
+          {checkingAuth ? "Verificando sesión..." : "Cargando tu perfil..."}
+        </p>
       </div>
     )
   }
@@ -158,22 +190,31 @@ export default function CrearPage() {
             <Label>Foto de perfil</Label>
             <div className="flex flex-col items-center gap-4">
               {profileImage ? (
-                <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring"
+                >
                   <img
                     src={profileImage}
                     alt="Profile"
                     width={128}
                     height={128}
-                    className="w-32 h-32 rounded-full object-cover border-4 border-white"
+                    className="w-full h-full object-cover"
                   />
-                </div>
+                </button>
               ) : (
-                <div className="w-32 h-32 rounded-full bg-secondary flex items-center justify-center border-4 border-white">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-32 h-32 rounded-full bg-secondary flex items-center justify-center border-4 border-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring"
+                >
                   <Upload className="w-8 h-8 text-muted-foreground" />
-                </div>
+                </button>
               )}
               <div>
                 <Input
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}
