@@ -1,8 +1,8 @@
 "use client"
 
+/* eslint-disable @next/next/no-img-element */
 import type React from "react"
 import { use, useEffect, useState } from "react"
-import Image, { type ImageLoader } from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Plus, Trash2, Upload } from "lucide-react"
@@ -29,8 +29,6 @@ interface Profile {
   custom_links: Array<{ title: string; url: string }>
   user_id: string | null
 }
-
-const externalImageLoader: ImageLoader = ({ src }) => src
 
 export default function EditarPage(props: { params: Promise<{ username: string }> }) {
   const { username } = use(props.params)
@@ -207,13 +205,11 @@ export default function EditarPage(props: { params: Promise<{ username: string }
             <div className="flex flex-col items-center gap-4">
               {profileImage ? (
                 <div className="relative">
-                  <Image
+                  <img
                     src={profileImage}
                     alt="Profile"
                     width={128}
                     height={128}
-                    loader={externalImageLoader}
-                    unoptimized
                     className="w-32 h-32 rounded-full object-cover border-4 border-white"
                   />
                 </div>

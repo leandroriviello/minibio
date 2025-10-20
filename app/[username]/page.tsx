@@ -1,5 +1,5 @@
 import type React from "react"
-import Image, { type ImageLoader } from "next/image"
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -29,8 +29,6 @@ const socialIcons: Record<string, React.ReactNode> = {
 }
 
 const RESERVED_ROUTES = ["crear", "editar", "api", "admin", "_next", "favicon.ico"]
-
-const externalImageLoader: ImageLoader = ({ src }) => src
 
 export default async function ProfilePage(props: { params: Promise<{ username: string }> }) {
   const { username } = await props.params
@@ -71,13 +69,11 @@ export default async function ProfilePage(props: { params: Promise<{ username: s
         {/* Profile Header */}
         <Card className="p-8 text-center space-y-4">
           {profile.profile_image_url ? (
-            <Image
+            <img
               src={profile.profile_image_url}
               alt={profile.display_name}
               width={128}
               height={128}
-              loader={externalImageLoader}
-              unoptimized
               className="w-32 h-32 rounded-full object-cover mx-auto border-4 border-white shadow-lg"
             />
           ) : (

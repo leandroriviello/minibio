@@ -2,8 +2,8 @@
 
 import type React from "react"
 
+/* eslint-disable @next/next/no-img-element */
 import { useEffect, useState } from "react"
-import Image, { type ImageLoader } from "next/image"
 import { useRouter } from "next/navigation"
 import { Plus, Trash2, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -19,8 +19,6 @@ interface CustomLink {
   title: string
   url: string
 }
-
-const externalImageLoader: ImageLoader = ({ src }) => src
 
 export default function CrearPage() {
   const router = useRouter()
@@ -161,13 +159,11 @@ export default function CrearPage() {
             <div className="flex flex-col items-center gap-4">
               {profileImage ? (
                 <div className="relative">
-                  <Image
+                  <img
                     src={profileImage}
                     alt="Profile"
                     width={128}
                     height={128}
-                    loader={externalImageLoader}
-                    unoptimized
                     className="w-32 h-32 rounded-full object-cover border-4 border-white"
                   />
                 </div>
