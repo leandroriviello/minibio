@@ -17,7 +17,7 @@ export default function HomePage() {
             </Button>
           </Link>
 
-          <Link href="/ejemplo">
+          <Link href="/leandroriviello">
             <Button variant="outline" size="lg" className="w-full bg-transparent">
               Ver ejemplo
             </Button>
