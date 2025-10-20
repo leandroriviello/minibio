@@ -14,7 +14,7 @@ Aplicación web creada con Next.js para generar páginas de presentación tipo �
 - Next.js 15.2, React 19
 - Tailwind CSS 4
 - PostgreSQL 15+
-- @neondatabase/serverless para acceso serverless a Postgres
+- Driver oficial `pg` para conectarse a PostgreSQL
 
 ## Requisitos previos
 1. Node.js 18.18 o superior (se recomienda 20 LTS).
@@ -29,7 +29,7 @@ Aplicación web creada con Next.js para generar páginas de presentación tipo �
    ```bash
    cp .env.example .env.local
    ```
-3. Completar `.env.local` con la cadena `DATABASE_URL` de tu instancia PostgreSQL (o `NEON_POSTGRES_URL` si tu proveedor usa ese nombre).
+3. Completar `.env.local` con la cadena `DATABASE_URL` de tu instancia PostgreSQL (o `NEON_POSTGRES_URL` si tu proveedor usa ese nombre). Si te conectás al host interno de Railway, agregá `PGSSLMODE=disable`.
 4. Levantar el entorno de desarrollo:
    ```bash
    npm run dev
@@ -40,6 +40,7 @@ Aplicación web creada con Next.js para generar páginas de presentación tipo �
 | --- | --- |
 | `DATABASE_URL` | Cadena de conexión estándar de PostgreSQL. Railway la provee automáticamente al crear una base. |
 | `NEON_POSTGRES_URL` / `POSTGRES_URL` | Variables alternativas compatibles (fallback). Úsalas solo si tu proveedor las expone con esos nombres. |
+| `PGSSLMODE` | Define si el cliente debe usar SSL (`disable` para conexiones internas como `postgres.railway.internal`). |
 
 ## Base de datos (PostgreSQL)
 La API crea la tabla `profiles` automáticamente en el primer request si el rol tiene permisos para:
@@ -71,8 +72,9 @@ El archivo `scripts/002_create_profiles_table_v2.sql` incluye índices y políti
 2. Configura los comandos:
    - **Build**: `npm run build`
    - **Start**: `npm run start`
-3. Añade esta variable en la sección *Variables*:
+3. Añade estas variables en la sección *Variables*:
    - `DATABASE_URL` (Railway la inyecta si agregas el plugin PostgreSQL).
+   - `PGSSLMODE=disable` si usas el host interno (`postgres.railway.internal`) para evitar negociar SSL.
 4. Conecta un servicio PostgreSQL en Railway o enlaza uno existente. Railway entregará la cadena `DATABASE_URL`.
    - Dentro de Railway, el host interno suele ser `postgres.railway.internal`.
 5. Ejecuta el script SQL (solo una vez) para habilitar `pgcrypto` y las tablas, desde el *Shell* de Railway:

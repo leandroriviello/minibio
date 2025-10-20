@@ -1,12 +1,10 @@
-import { neon } from "@neondatabase/serverless"
+import { Pool } from "pg"
 
-type NeonClient = ReturnType<typeof neon>
+let pool: Pool | null = null
 
-let sqlClient: NeonClient | null = null
-
-function getSqlClient(): NeonClient {
-  if (sqlClient) {
-    return sqlClient
+function getPool(): Pool {
+  if (pool) {
+    return pool
   }
 
   const connectionString =
@@ -14,12 +12,28 @@ function getSqlClient(): NeonClient {
 
   if (!connectionString) {
     throw new Error(
-      "DATABASE_URL (or NEON_POSTGRES_URL / POSTGRES_URL) must be defined to connect to PostgreSQL.",
+      "DATABASE_URL (o NEON_POSTGRES_URL / POSTGRES_URL) debe estar definida para conectar a PostgreSQL.",
     )
   }
 
-  sqlClient = neon(connectionString)
-  return sqlClient
+  const lowerCasedUrl = connectionString.toLowerCase()
+  const disableSSLFlag = (process.env.PGSSLMODE ?? "").toLowerCase() === "disable"
+  const shouldDisableSSL =
+    disableSSLFlag ||
+    lowerCasedUrl.includes("localhost") ||
+    lowerCasedUrl.includes("127.0.0.1") ||
+    lowerCasedUrl.includes("railway.internal")
+
+  pool = new Pool({
+    connectionString,
+    ssl: shouldDisableSSL ? false : { rejectUnauthorized: false },
+  })
+
+  pool.on("error", (error) => {
+    console.error("[minibio] Error en la conexión de PostgreSQL:", error)
+  })
+
+  return pool
 }
 
 export interface CustomLink {
@@ -41,47 +55,33 @@ export interface Profile {
 
 let dbInitialized = false
 
-function normalizeResult<T>(result: unknown): T[] {
-  if (Array.isArray(result)) {
-    return result as T[]
-  }
-
-  if (result && typeof result === "object" && "rows" in result && Array.isArray((result as { rows: unknown }).rows)) {
-    return (result as { rows: unknown[] }).rows as T[]
-  }
-
-  return []
-}
-
 async function initializeDatabase() {
   if (dbInitialized) return
 
   try {
     console.log("[v0] Inicializando base de datos...")
 
-    const sql = getSqlClient()
+    const pool = getPool()
 
-    await sql`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`
+    await pool.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`)
 
     // Crear tabla profiles si no existe
-    await sql`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS profiles (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         username TEXT UNIQUE NOT NULL,
         display_name TEXT NOT NULL,
         bio TEXT,
         profile_image_url TEXT,
-        social_links JSONB DEFAULT '{}',
-        custom_links JSONB DEFAULT '[]',
+        social_links JSONB DEFAULT '{}'::jsonb,
+        custom_links JSONB DEFAULT '[]'::jsonb,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
-    `
+    `)
 
     // Crear índice
-    await sql`
-      CREATE INDEX IF NOT EXISTS idx_profiles_username ON profiles(username)
-    `
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_profiles_username ON profiles(username)`)
 
     console.log("[v0] Base de datos inicializada correctamente")
   } catch (error) {
@@ -96,12 +96,8 @@ export async function getProfileByUsername(username: string): Promise<Profile | 
   await initializeDatabase()
 
   try {
-    const sql = getSqlClient()
-    const result = await sql`
-      SELECT * FROM profiles WHERE username = ${username}
-    `
-
-    const rows = normalizeResult<Profile>(result)
+    const pool = getPool()
+    const { rows } = await pool.query<Profile>(`SELECT * FROM profiles WHERE username = $1`, [username])
 
     if (rows.length === 0) {
       return null
@@ -125,33 +121,31 @@ export async function createProfile(data: {
   await initializeDatabase()
 
   try {
-    const sql = getSqlClient()
-    const existing = await sql`
-      SELECT id FROM profiles WHERE username = ${data.username}
-    `
+    const pool = getPool()
+    const existing = await pool.query<{ id: string }>(
+      `SELECT id FROM profiles WHERE username = $1`,
+      [data.username],
+    )
 
-    const existingRows = normalizeResult<{ id: string }>(existing)
-
-    if (existingRows.length > 0) {
+    if (existing.rows.length > 0) {
       throw new Error("Este nombre de usuario ya está en uso")
     }
 
-    const result = await sql`
-      INSERT INTO profiles (username, display_name, bio, profile_image_url, social_links, custom_links)
-      VALUES (
-        ${data.username}, 
-        ${data.display_name}, 
-        ${data.bio || null}, 
-        ${data.profile_image_url || null}, 
-        ${JSON.stringify(data.social_links)}, 
-        ${JSON.stringify(data.custom_links)}
-      )
-      RETURNING *
-    `
+    const result = await pool.query<Profile>(
+      `INSERT INTO profiles (username, display_name, bio, profile_image_url, social_links, custom_links)
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb)
+       RETURNING *`,
+      [
+        data.username,
+        data.display_name,
+        data.bio || null,
+        data.profile_image_url || null,
+        JSON.stringify(data.social_links),
+        JSON.stringify(data.custom_links),
+      ],
+    )
 
-    const rows = normalizeResult<Profile>(result)
-
-    return rows[0] ?? null
+    return result.rows[0] ?? null
   } catch (error) {
     console.error("[v0] Error creating profile:", error)
     throw error
@@ -171,33 +165,38 @@ export async function updateProfile(
   await initializeDatabase()
 
   try {
-    const sql = getSqlClient()
-    const existing = await sql`
-      SELECT id FROM profiles WHERE username = ${username}
-    `
+    const pool = getPool()
+    const existing = await pool.query<{ id: string }>(
+      `SELECT id FROM profiles WHERE username = $1`,
+      [username],
+    )
 
-    const existingRows = normalizeResult<{ id: string }>(existing)
-
-    if (existingRows.length === 0) {
+    if (existing.rows.length === 0) {
       throw new Error("Perfil no encontrado")
     }
 
-    const result = await sql`
-      UPDATE profiles
-      SET 
-        display_name = ${data.display_name},
-        bio = ${data.bio || null},
-        profile_image_url = ${data.profile_image_url || null},
-        social_links = ${JSON.stringify(data.social_links)},
-        custom_links = ${JSON.stringify(data.custom_links)},
-        updated_at = NOW()
-      WHERE username = ${username}
-      RETURNING *
-    `
+    const result = await pool.query<Profile>(
+      `UPDATE profiles
+       SET 
+         display_name = $1,
+         bio = $2,
+         profile_image_url = $3,
+         social_links = $4::jsonb,
+         custom_links = $5::jsonb,
+         updated_at = NOW()
+       WHERE username = $6
+       RETURNING *`,
+      [
+        data.display_name,
+        data.bio || null,
+        data.profile_image_url || null,
+        JSON.stringify(data.social_links),
+        JSON.stringify(data.custom_links),
+        username,
+      ],
+    )
 
-    const rows = normalizeResult<Profile>(result)
-
-    return rows[0] ?? null
+    return result.rows[0] ?? null
   } catch (error) {
     console.error("[v0] Error updating profile:", error)
     throw error

@@ -31,8 +31,8 @@ interface Profile {
 
 const externalImageLoader: ImageLoader = ({ src }) => src
 
-export default function EditarPage({ params }: { params: Promise<{ username: string }> }) {
-  const { username } = use(params)
+export default function EditarPage(props: { params: Promise<{ username: string }> }) {
+  const { username } = use(props.params)
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)

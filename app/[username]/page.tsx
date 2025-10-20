@@ -32,8 +32,8 @@ const RESERVED_ROUTES = ["crear", "editar", "api", "admin", "_next", "favicon.ic
 
 const externalImageLoader: ImageLoader = ({ src }) => src
 
-export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
-  const { username } = await params
+export default async function ProfilePage(props: { params: Promise<{ username: string }> }) {
+  const { username } = await props.params
 
   if (RESERVED_ROUTES.includes(username)) {
     redirect("/crear")
