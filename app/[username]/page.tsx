@@ -37,6 +37,15 @@ const socialIcons: Record<string, React.ReactNode> = {
   email: <Mail className="h-5 w-5" />,
 }
 
+const socialLabels: Record<string, string> = {
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  twitter: "X",
+  youtube: "YouTube",
+  linkedin: "LinkedIn",
+  email: "Email",
+}
+
 const RESERVED_ROUTES = ["crear", "editar", "api", "admin", "_next", "favicon.ico"]
 
 export default async function ProfilePage(props: { params: Promise<{ username: string }> }) {
