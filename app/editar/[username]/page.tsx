@@ -5,7 +5,7 @@ import type React from "react"
 import { use, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Plus, Trash2, Upload } from "lucide-react"
+import { ArrowLeft, Loader2, Plus, Trash2, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { fileToDataUrl } from "@/lib/files"
 import { createEmptySocialLinks, type SocialLinkFormValue } from "@/lib/social-links"
+import { cn } from "@/lib/utils"
 
 interface CustomLink {
   id: string
@@ -33,13 +34,13 @@ interface Profile {
 export default function EditarPage(props: { params: Promise<{ username: string }> }) {
   const { username } = use(props.params)
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [loadingProfile, setLoadingProfile] = useState(true)
-  const [checkingAuth, setCheckingAuth] = useState(true)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
-  // Form state
+  const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(true)
+  const [loadingProfile, setLoadingProfile] = useState(true)
+
   const [displayName, setDisplayName] = useState("")
   const [bio, setBio] = useState("")
   const [profileImage, setProfileImage] = useState<string>("")
@@ -47,54 +48,48 @@ export default function EditarPage(props: { params: Promise<{ username: string }
   const [customLinks, setCustomLinks] = useState<CustomLink[]>([])
 
   useEffect(() => {
-    const fetchData = async () => {
+    const bootstrap = async () => {
       try {
         const sessionRes = await fetch("/api/auth/session", { credentials: "include" })
         if (!sessionRes.ok) {
-          setCheckingAuth(false)
-          setLoadingProfile(false)
           router.replace(`/auth?redirect=/editar/${username}`)
           return
         }
         setCheckingAuth(false)
 
-        const response = await fetch(`/api/profiles?username=${username}`)
+        const response = await fetch(`/api/profiles?username=${encodeURIComponent(username)}`)
         if (!response.ok) {
           throw new Error("Perfil no encontrado")
         }
-        const profile: Profile = await response.json()
+        const profile = (await response.json()) as Profile
 
         setDisplayName(profile.display_name)
         setBio(profile.bio || "")
         setProfileImage(profile.profile_image_url || "")
-
-        // Load social links
-        const loadedSocialLinks = createEmptySocialLinks().map((link) => ({
-          ...link,
-          url: profile.social_links[link.platform] || "",
-        }))
-        setSocialLinks(loadedSocialLinks)
-
-        // Load custom links
-        const loadedCustomLinks = (profile.custom_links || []).map((link, index) => ({
-          ...link,
-          id: `${Date.now()}-${index}`,
-        }))
-        setCustomLinks(loadedCustomLinks)
+        setSocialLinks(
+          createEmptySocialLinks().map((link) => ({
+            ...link,
+            url: profile.social_links[link.platform] || "",
+          })),
+        )
+        setCustomLinks(
+          (profile.custom_links || []).map((link, index) => ({ ...link, id: `${Date.now()}-${index}` })),
+        )
       } catch (error) {
         console.error("Error loading profile:", error)
-        alert("Error al cargar el perfil")
+        alert("No encontramos ese perfil o no tenés permiso para editarlo.")
         router.push("/")
+        return
       } finally {
         setLoadingProfile(false)
       }
     }
 
-    void fetchData()
+    void bootstrap()
   }, [username, router])
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
     if (!file) return
 
     if (file.size > 2 * 1024 * 1024) {
@@ -115,23 +110,23 @@ export default function EditarPage(props: { params: Promise<{ username: string }
   }
 
   const addCustomLink = () => {
-    setCustomLinks([...customLinks, { id: Date.now().toString(), title: "", url: "" }])
+    setCustomLinks((prev) => [...prev, { id: Date.now().toString(), title: "", url: "" }])
   }
 
   const removeCustomLink = (id: string) => {
-    setCustomLinks(customLinks.filter((link) => link.id !== id))
+    setCustomLinks((prev) => prev.filter((link) => link.id !== id))
   }
 
   const updateCustomLink = (id: string, field: "title" | "url", value: string) => {
-    setCustomLinks(customLinks.map((link) => (link.id === id ? { ...link, [field]: value } : link)))
+    setCustomLinks((prev) => prev.map((link) => (link.id === id ? { ...link, [field]: value } : link)))
   }
 
   const updateSocialLink = (platform: string, url: string) => {
-    setSocialLinks(socialLinks.map((link) => (link.platform === platform ? { ...link, url } : link)))
+    setSocialLinks((prev) => prev.map((link) => (link.platform === platform ? { ...link, url } : link)))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
 
     if (!displayName) {
       alert("Por favor completa el nombre a mostrar")
@@ -178,166 +173,233 @@ export default function EditarPage(props: { params: Promise<{ username: string }
 
   if (checkingAuth || loadingProfile) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">{checkingAuth ? "Verificando sesión..." : "Cargando perfil..."}</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#05060f] text-white">
+        <p className="text-sm text-white/60">
+          {checkingAuth ? "Verificando sesión..." : "Cargando tu minibio..."}
+        </p>
       </div>
     )
   }
 
+  const glassCardClass =
+    "rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-[0_25px_80px_-40px_rgba(12,15,35,0.8)]"
+  const inputClass =
+    "bg-white/10 border-white/15 text-white placeholder:text-white/40 focus-visible:border-white/40 focus-visible:ring-2 focus-visible:ring-white/30"
+
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-2xl mx-auto space-y-8">
-        <div className="flex items-center gap-4">
-          <Link href={`/${username}`}>
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div className="space-y-1">
-            <h1 className="text-4xl font-bold">Editar perfil</h1>
-            <p className="text-muted-foreground">Actualiza tu información</p>
-          </div>
-        </div>
+    <div className="relative min-h-screen overflow-hidden bg-[#05060f] text-white">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[-10%] top-16 h-[22rem] w-[22rem] rounded-full bg-[#ff5f8e24] blur-[120px]" />
+        <div className="absolute right-[-15%] top-[-12%] h-[28rem] w-[28rem] rounded-full bg-[#7c5efe2d] blur-[140px]" />
+        <div className="absolute bottom-[-22%] left-[40%] h-[26rem] w-[26rem] rounded-full bg-[#5ddaff26] blur-[160px]" />
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Profile Image */}
-          <Card className="p-6 space-y-4">
-            <Label>Foto de perfil</Label>
-            <div className="flex flex-col items-center gap-4">
-              {profileImage ? (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring"
-                >
-                  <img
-                    src={profileImage}
-                    alt="Profile"
-                    width={128}
-                    height={128}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-32 h-32 rounded-full bg-secondary flex items-center justify-center border-4 border-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring"
-                >
-                  <Upload className="w-8 h-8 text-muted-foreground" />
-                </button>
-              )}
-              <div className="w-full">
-                <Input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  disabled={uploading}
-                  className="cursor-pointer"
-                />
-                {uploading && <p className="text-sm text-muted-foreground mt-2">Procesando imagen...</p>}
-              </div>
-            </div>
-          </Card>
-
-          {/* Basic Info */}
-          <Card className="p-6 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Nombre de usuario</Label>
-              <Input id="username" value={username} disabled className="bg-secondary" />
-              <p className="text-xs text-muted-foreground">El nombre de usuario no se puede cambiar</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="displayName">Nombre a mostrar *</Label>
-              <Input
-                id="displayName"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Tu Nombre"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bio">Biografía</Label>
-              <Textarea
-                id="bio"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Cuéntanos sobre ti..."
-                rows={3}
-              />
-            </div>
-          </Card>
-
-          {/* Social Links */}
-          <Card className="p-6 space-y-4">
-            <Label>Redes sociales</Label>
-            <div className="space-y-3">
-              {socialLinks.map((link) => (
-                <div key={link.platform} className="space-y-1">
-                  <Label htmlFor={link.platform} className="text-sm capitalize">
-                    {link.platform}
-                  </Label>
-                  <Input
-                    id={link.platform}
-                    value={link.url}
-                    onChange={(e) => updateSocialLink(link.platform, e.target.value)}
-                    placeholder={`https://...`}
-                  />
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Custom Links */}
-          <Card className="p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Enlaces personalizados</Label>
-              <Button type="button" variant="outline" size="sm" onClick={addCustomLink}>
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar enlace
+      <div className="relative z-10 px-4 py-12 md:px-8 md:py-16">
+        <div className="mx-auto w-full max-w-3xl space-y-10">
+          <header className="flex items-center justify-between">
+            <Link href={`/${username}`} className="inline-flex items-center gap-2 text-white/70 hover:text-white">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full border border-white/15 bg-white/5 text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="h-5 w-5" />
               </Button>
-            </div>
-
-            <div className="space-y-4">
-              {customLinks.map((link) => (
-                <div key={link.id} className="space-y-2 p-4 border border-border rounded-lg">
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="flex-1 space-y-2">
-                      <Input
-                        value={link.title}
-                        onChange={(e) => updateCustomLink(link.id, "title", e.target.value)}
-                        placeholder="Título del enlace"
-                      />
-                      <Input
-                        value={link.url}
-                        onChange={(e) => updateCustomLink(link.id, "url", e.target.value)}
-                        placeholder="https://..."
-                      />
-                    </div>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeCustomLink(link.id)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <div className="flex gap-3">
-            <Link href={`/${username}`} className="flex-1">
-              <Button type="button" variant="outline" size="lg" className="w-full bg-transparent">
-                Cancelar
-              </Button>
+              <span className="hidden text-sm uppercase tracking-[0.3em] md:inline text-white/40">
+                volver
+              </span>
             </Link>
-            <Button type="submit" size="lg" className="flex-1" disabled={loading}>
-              {loading ? "Guardando..." : "Guardar cambios"}
+            <div className="text-right">
+              <p className="text-sm uppercase tracking-[0.3em] text-white/40">panel</p>
+              <h1 className="text-3xl font-semibold md:text-4xl">Editá tu minibio</h1>
+            </div>
+          </header>
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <Card className={cn(glassCardClass, "p-8 space-y-6")}>
+              <Label className="text-white/70">Foto de perfil</Label>
+              <div className="flex flex-col items-center gap-5">
+                {profileImage ? (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="group relative h-32 w-32 overflow-hidden rounded-full border border-white/20 bg-gradient-to-br from-white/40 to-white/10 p-[2px] shadow-[0_20px_40px_-30px_rgba(124,94,254,0.8)] transition-transform hover:scale-105 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/60"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                    <img src={profileImage} alt="Profile" width={128} height={128} className="h-full w-full rounded-full object-cover" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex h-32 w-32 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/70 shadow-[0_20px_40px_-30px_rgba(93,218,255,0.8)] transition-transform hover:scale-105 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/60"
+                  >
+                    <Upload className="h-8 w-8" />
+                  </button>
+                )}
+                <div className="text-center space-y-2">
+                  <Input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploading}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="rounded-full border-white/30 bg-white/10 text-white/80 hover:bg-white/20"
+                  >
+                    {uploading ? "Procesando..." : "Actualizar imagen"}
+                  </Button>
+                  <p className="text-xs text-white/45">Recomendamos imágenes cuadradas · Máx 2MB</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className={cn(glassCardClass, "p-8 space-y-6")}>
+              <div className="space-y-3">
+                <Label className="text-white/70" htmlFor="username">
+                  Nombre de usuario
+                </Label>
+                <Input
+                  id="username"
+                  value={username}
+                  disabled
+                  className={cn(inputClass, "cursor-not-allowed opacity-60 bg-white/5")}
+                />
+                <p className="text-xs text-white/45">Tu URL pública es minibio.app/{username}</p>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-white/70" htmlFor="displayName">
+                  Nombre a mostrar *
+                </Label>
+                <Input
+                  id="displayName"
+                  value={displayName}
+                  onChange={(event) => setDisplayName(event.target.value)}
+                  placeholder="Tu nombre artístico o profesional"
+                  required
+                  className={inputClass}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-white/70" htmlFor="bio">
+                  Biografía
+                </Label>
+                <Textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(event) => setBio(event.target.value)}
+                  placeholder="Actualizá tu texto de presentación."
+                  rows={4}
+                  className={cn(inputClass, "resize-none")}
+                />
+              </div>
+            </Card>
+
+            <Card className={cn(glassCardClass, "p-8 space-y-5")}>
+              <div className="flex items-center justify-between">
+                <Label className="text-white/70">Redes sociales</Label>
+                <p className="text-xs text-white/45">Mostrá solo las redes que quieras destacar</p>
+              </div>
+              <div className="grid gap-4">
+                {socialLinks.map((link) => (
+                  <div key={link.platform} className="space-y-2">
+                    <Label htmlFor={link.platform} className="capitalize text-xs text-white/50">
+                      {link.platform}
+                    </Label>
+                    <Input
+                      id={link.platform}
+                      value={link.url}
+                      onChange={(event) => updateSocialLink(link.platform, event.target.value)}
+                      placeholder="https://..."
+                      className={inputClass}
+                    />
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card className={cn(glassCardClass, "p-8 space-y-6")}>
+              <div className="flex items-center justify-between">
+                <Label className="text-white/70">Enlaces personalizados</Label>
+                <Button
+                  type="button"
+                  onClick={addCustomLink}
+                  className="rounded-full border border-white/20 bg-white/10 text-white/80 hover:bg-white/20"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Agregar enlace
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {customLinks.map((link) => (
+                  <div
+                    key={link.id}
+                    className="rounded-2xl border border-white/15 bg-white/8 p-4 backdrop-blur-xl shadow-inner"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 space-y-3">
+                        <Input
+                          value={link.title}
+                          onChange={(event) => updateCustomLink(link.id, "title", event.target.value)}
+                          placeholder="Título del enlace"
+                          className={inputClass}
+                        />
+                        <Input
+                          value={link.url}
+                          onChange={(event) => updateCustomLink(link.id, "url", event.target.value)}
+                          placeholder="https://..."
+                          className={inputClass}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeCustomLink(link.id)}
+                        className="mt-1 text-white/60 hover:text-white"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {customLinks.length === 0 ? (
+                  <p className="text-xs text-white/40">
+                    Sumá botones a tus proyectos, tiendas o landing pages favoritas.
+                  </p>
+                ) : null}
+              </div>
+            </Card>
+
+            <Button
+              type="submit"
+              size="lg"
+              disabled={loading}
+              className={cn(
+                "w-full rounded-full bg-gradient-to-r from-[#7c5efe] via-[#5ddaff] to-[#7c5efe] text-[#05060f] transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#7c5efe]",
+                "shadow-[0_20px_60px_-30px_rgba(124,94,254,0.8)]",
+                loading && "opacity-60 cursor-not-allowed",
+              )}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                "Guardar cambios"
+              )}
             </Button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   )

@@ -44,6 +44,16 @@ Aplicación web creada con Next.js para generar páginas de presentación tipo �
 | `PGSSLMODE` | Define si el cliente debe usar SSL (`disable` para conexiones internas como `postgres.railway.internal`). |
 | `AUTH_SECRET` | Cadena aleatoria (mínimo 32 caracteres) usada para firmar los tokens de sesión. |
 
+## Verificación de cuentas (opcional)
+El flujo actual autentica con correo y contraseña, pero no envía correos de verificación. Si querés añadirlo:
+- Usá un proveedor de envío transaccional (por ejemplo [Resend](https://resend.com/) o [AWS SES]). Sus planes tienen capas gratuitas para bajos volúmenes.
+- Crea una tabla `email_verifications` con token, user_id, fecha de expiración.
+- Al registrarse, enviá un correo con un enlace `https://tu-dominio.com/api/auth/verify?token=...`.
+- Implementá una ruta que valide el token, marque al usuario como verificado y limpie el registro.
+- Añadí un middleware que impida crear/editar perfiles si `user.email_verified_at` está vacío.
+
+Este trabajo requiere configuración del proveedor, manejo de reintentos y una UI para reenviar/verificar el estado, pero no tiene costo si te mantenés dentro del free tier.
+
 ## Base de datos (PostgreSQL)
 La API crea la tabla `profiles` automáticamente en el primer request si el rol tiene permisos para:
 

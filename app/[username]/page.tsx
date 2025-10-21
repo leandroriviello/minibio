@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Instagram, Twitter, Youtube, Linkedin, Mail, ExternalLink } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { getProfileByUsername } from "@/lib/db"
 
 interface SocialLink {
@@ -14,18 +15,18 @@ interface SocialLink {
 }
 
 const TikTokIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
   </svg>
 )
 
 const socialIcons: Record<string, React.ReactNode> = {
-  instagram: <Instagram className="w-5 h-5" />,
+  instagram: <Instagram className="h-5 w-5" />,
   tiktok: <TikTokIcon />,
-  twitter: <Twitter className="w-5 h-5" />,
-  youtube: <Youtube className="w-5 h-5" />,
-  linkedin: <Linkedin className="w-5 h-5" />,
-  email: <Mail className="w-5 h-5" />,
+  twitter: <Twitter className="h-5 w-5" />,
+  youtube: <Youtube className="h-5 w-5" />,
+  linkedin: <Linkedin className="h-5 w-5" />,
+  email: <Mail className="h-5 w-5" />,
 }
 
 const RESERVED_ROUTES = ["crear", "editar", "api", "admin", "_next", "favicon.ico"]
@@ -41,7 +42,7 @@ export default async function ProfilePage(props: { params: Promise<{ username: s
   try {
     profile = await getProfileByUsername(username)
   } catch (error) {
-    console.error("[v0] Error fetching profile:", error)
+    console.error("[minibio] Error fetching profile:", error)
     notFound()
   }
 
@@ -54,89 +55,129 @@ export default async function ProfilePage(props: { params: Promise<{ username: s
     .map(([platform, url]) => ({
       platform,
       url,
-      icon: socialIcons[platform] || <ExternalLink className="w-5 h-5" />,
+      icon: socialIcons[platform] || <ExternalLink className="h-5 w-5" />,
     }))
 
+  const glassCardClass =
+    "rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl shadow-[0_45px_120px_-60px_rgba(15,15,35,0.9)]"
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 p-4 md:p-8">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex justify-end">
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/editar/${username}`}>Editar perfil</Link>
-          </Button>
-        </div>
+    <div className="relative min-h-screen overflow-hidden bg-[#05060f] text-white">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[-12%] top-[15%] h-[26rem] w-[26rem] rounded-full bg-[#ff5f8e24] blur-[140px]" />
+        <div className="absolute right-[-8%] top-[-10%] h-[30rem] w-[30rem] rounded-full bg-[#7c5efe2f] blur-[160px]" />
+        <div className="absolute bottom-[-25%] left-[35%] h-[32rem] w-[32rem] rounded-full bg-[#5ddaff26] blur-[180px]" />
+      </div>
 
-        {/* Profile Header */}
-        <Card className="p-8 text-center space-y-4">
-          {profile.profile_image_url ? (
-            <img
-              src={profile.profile_image_url}
-              alt={profile.display_name}
-              width={128}
-              height={128}
-              className="w-32 h-32 rounded-full object-cover mx-auto border-4 border-white shadow-lg"
-            />
-          ) : (
-            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 mx-auto border-4 border-white shadow-lg flex items-center justify-center">
-              <span className="text-4xl font-bold text-primary">{profile.display_name.charAt(0).toUpperCase()}</span>
+      <div className="relative z-10 px-4 py-12 md:px-8 md:py-20">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-10">
+          <header className="flex items-center justify-between">
+            <div className="space-y-1 text-sm uppercase tracking-[0.3em] text-white/40">
+              <p>minibio</p>
+              <p>perfil</p>
             </div>
-          )}
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/20"
+            >
+              <Link href={`/editar/${username}`}>Editar perfil</Link>
+            </Button>
+          </header>
 
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold">{profile.display_name}</h1>
-            <p className="text-muted-foreground">@{profile.username}</p>
-          </div>
-
-          {profile.bio && <p className="text-foreground/80 max-w-md mx-auto leading-relaxed">{profile.bio}</p>}
-        </Card>
-
-        {/* Social Links */}
-        {socialLinks.length > 0 && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Redes sociales</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {socialLinks.map((link) => (
-                <a
-                  key={link.platform}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-secondary/50 transition-colors"
-                >
-                  {link.icon}
-                  <span className="capitalize text-sm font-medium">{link.platform}</span>
-                </a>
-              ))}
+          <Card className={cn(glassCardClass, "p-10 text-center space-y-8")}>
+            <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-full border border-white/20 bg-gradient-to-br from-white/40 to-white/10 p-[3px] shadow-[0_30px_80px_-60px_rgba(124,94,254,0.8)]">
+              {profile.profile_image_url ? (
+                <img
+                  src={profile.profile_image_url}
+                  alt={profile.display_name}
+                  width={144}
+                  height={144}
+                  className="h-full w-full rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-white/40 to-white/5 text-4xl font-semibold text-white/80">
+                  {profile.display_name.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
+
+            <div className="space-y-2">
+              <h1 className="text-4xl font-semibold md:text-5xl">{profile.display_name}</h1>
+              <p className="text-sm uppercase tracking-[0.4em] text-white/40">@{profile.username}</p>
+            </div>
+
+            {profile.bio ? (
+              <p className="mx-auto max-w-xl text-base leading-relaxed text-white/70">{profile.bio}</p>
+            ) : (
+              <p className="text-sm text-white/40">Este creador aún no escribió una biografía.</p>
+            )}
           </Card>
-        )}
 
-        {/* Custom Links */}
-        {profile.custom_links && profile.custom_links.length > 0 && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Enlaces</h2>
-            <div className="space-y-3">
-              {profile.custom_links.map((link, index) => (
-                <a key={index} href={link.url} target="_blank" rel="noopener noreferrer" className="block">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-between h-auto py-4 px-6 text-left hover:bg-secondary/50 bg-transparent"
+          {socialLinks.length > 0 ? (
+            <Card className={cn(glassCardClass, "p-8 space-y-5")}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Conectá en redes</h2>
+                <span className="text-xs uppercase tracking-[0.4em] text-white/40">Social</span>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {socialLinks.map((link) => (
+                  <a
+                    key={link.platform}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center justify-between rounded-2xl border border-white/15 bg-white/8 px-5 py-4 text-left transition hover:bg-white/16"
                   >
-                    <span className="font-medium">{link.title}</span>
-                    <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                  </Button>
-                </a>
-              ))}
-            </div>
-          </Card>
-        )}
+                    <div className="flex items-center gap-3 text-sm font-medium capitalize">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white group-hover:bg-white/20">
+                        {link.icon}
+                      </span>
+                      {link.platform}
+                    </div>
+                    <ExternalLink className="h-4 w-4 text-white/50 group-hover:text-white/80" />
+                  </a>
+                ))}
+              </div>
+            </Card>
+          ) : null}
 
-        {/* Footer */}
-        <div className="text-center py-6">
-          <p className="text-sm text-muted-foreground mb-3">¿Quieres tu propia minibio?</p>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/">Crear la mía</Link>
-          </Button>
+          {profile.custom_links && profile.custom_links.length > 0 ? (
+            <Card className={cn(glassCardClass, "p-8 space-y-5")}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Enlaces destacados</h2>
+                <span className="text-xs uppercase tracking-[0.4em] text-white/40">Links</span>
+              </div>
+              <div className="space-y-3">
+                {profile.custom_links.map((link, index) => (
+                  <a
+                    key={`${link.url}-${index}`}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group block rounded-2xl border border-white/12 bg-white/7 p-[1px] transition hover:border-white/25"
+                  >
+                    <div className="flex items-center justify-between rounded-[18px] bg-[#05060f]/70 px-6 py-4 transition group-hover:bg-[#05060f]/60">
+                      <span className="text-base font-medium">{link.title}</span>
+                      <ExternalLink className="h-4 w-4 text-white/50 group-hover:text-white/80" />
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </Card>
+          ) : null}
+
+          <footer className="text-center space-y-4">
+            <p className="text-sm text-white/50">¿Querés un perfil así de elegante?</p>
+            <Button
+              asChild
+              variant="outline"
+              className="rounded-full border-white/20 bg-white/10 px-6 py-2 text-white hover:bg-white/20"
+            >
+              <Link href="/auth">Crear mi minibio</Link>
+            </Button>
+          </footer>
         </div>
       </div>
     </div>
