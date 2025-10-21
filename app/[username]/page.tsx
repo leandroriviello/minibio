@@ -1,12 +1,14 @@
 import type React from "react"
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link"
+import { cookies } from "next/headers"
 import { notFound, redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Instagram, Twitter, Youtube, Linkedin, Mail, ExternalLink } from "lucide-react"
+import { Instagram, Youtube, Linkedin, Mail, ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getProfileByUsername } from "@/lib/db"
+import { verifySessionToken } from "@/lib/session"
 
 interface SocialLink {
   platform: string
@@ -20,10 +22,16 @@ const TikTokIcon = () => (
   </svg>
 )
 
+const XIcon = () => (
+  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M4.5 3.75h3.27l4.02 5.35 4.53-5.35h3.18l-6.21 7.28 6.61 9.22h-3.27l-4.35-6.04-5.13 6.04H4.88l6.48-7.62-6.86-8.88Z" />
+  </svg>
+)
+
 const socialIcons: Record<string, React.ReactNode> = {
   instagram: <Instagram className="h-5 w-5" />,
   tiktok: <TikTokIcon />,
-  twitter: <Twitter className="h-5 w-5" />,
+  twitter: <XIcon />,
   youtube: <Youtube className="h-5 w-5" />,
   linkedin: <Linkedin className="h-5 w-5" />,
   email: <Mail className="h-5 w-5" />,
@@ -50,6 +58,16 @@ export default async function ProfilePage(props: { params: Promise<{ username: s
     notFound()
   }
 
+  const cookieStore = await cookies()
+  const sessionCookie = cookieStore.get("minibio_session")?.value
+  let canEdit = false
+  if (sessionCookie && profile.user_id) {
+    const session = await verifySessionToken(sessionCookie)
+    if (session?.userId === profile.user_id) {
+      canEdit = true
+    }
+  }
+
   const socialLinks: SocialLink[] = Object.entries(profile.social_links || {})
     .filter(([, url]) => url)
     .map(([platform, url]) => ({
@@ -59,35 +77,33 @@ export default async function ProfilePage(props: { params: Promise<{ username: s
     }))
 
   const glassCardClass =
-    "rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl shadow-[0_45px_120px_-60px_rgba(15,15,35,0.9)]"
+    "rounded-3xl border border-white/10 bg-[#101013]/70 backdrop-blur-2xl shadow-[0_45px_120px_-70px_rgba(0,0,0,0.85)]"
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#05060f] text-white">
+    <div className="relative min-h-screen overflow-hidden bg-[#0c0c0f] text-white">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[-12%] top-[15%] h-[26rem] w-[26rem] rounded-full bg-[#ff5f8e24] blur-[140px]" />
-        <div className="absolute right-[-8%] top-[-10%] h-[30rem] w-[30rem] rounded-full bg-[#7c5efe2f] blur-[160px]" />
-        <div className="absolute bottom-[-25%] left-[35%] h-[32rem] w-[32rem] rounded-full bg-[#5ddaff26] blur-[180px]" />
+        <div className="absolute left-[-20%] top-[12%] h-[28rem] w-[28rem] rounded-full bg-white/6 blur-[160px]" />
+        <div className="absolute right-[-18%] top-[-12%] h-[32rem] w-[32rem] rounded-full bg-white/5 blur-[170px]" />
+        <div className="absolute bottom-[-28%] left-[38%] h-[36rem] w-[36rem] rounded-full bg-white/4 blur-[200px]" />
       </div>
 
       <div className="relative z-10 px-4 py-12 md:px-8 md:py-20">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-10">
-          <header className="flex items-center justify-between">
-            <div className="space-y-1 text-sm uppercase tracking-[0.3em] text-white/40">
-              <p>minibio</p>
-              <p>perfil</p>
+          {canEdit ? (
+            <div className="flex justify-end">
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15"
+              >
+                <Link href={`/editar/${username}`}>Editar perfil</Link>
+              </Button>
             </div>
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/20"
-            >
-              <Link href={`/editar/${username}`}>Editar perfil</Link>
-            </Button>
-          </header>
+          ) : null}
 
-          <Card className={cn(glassCardClass, "p-10 text-center space-y-8")}>
-            <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-full border border-white/20 bg-gradient-to-br from-white/40 to-white/10 p-[3px] shadow-[0_30px_80px_-60px_rgba(124,94,254,0.8)]">
+          <Card className={cn(glassCardClass, "p-10 text-center space-y-8")}> 
+            <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-full border border-white/20 bg-gradient-to-br from-white/30 to-white/10 p-[3px] shadow-[0_30px_80px_-70px_rgba(0,0,0,0.85)]">
               {profile.profile_image_url ? (
                 <img
                   src={profile.profile_image_url}
@@ -130,11 +146,11 @@ export default async function ProfilePage(props: { params: Promise<{ username: s
                     rel="noopener noreferrer"
                     className="group flex items-center justify-between rounded-2xl border border-white/15 bg-white/8 px-5 py-4 text-left transition hover:bg-white/16"
                   >
-                    <div className="flex items-center gap-3 text-sm font-medium capitalize">
+                    <div className="flex items-center gap-3 text-sm font-medium">
                       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white group-hover:bg-white/20">
                         {link.icon}
                       </span>
-                      {link.platform}
+                      {socialLabels[link.platform] ?? link.platform}
                     </div>
                     <ExternalLink className="h-4 w-4 text-white/50 group-hover:text-white/80" />
                   </a>
@@ -156,9 +172,9 @@ export default async function ProfilePage(props: { params: Promise<{ username: s
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group block rounded-2xl border border-white/12 bg-white/7 p-[1px] transition hover:border-white/25"
+                    className="group block rounded-2xl border border-white/12 bg-white/7 p-[1px] transition hover:border-white/20"
                   >
-                    <div className="flex items-center justify-between rounded-[18px] bg-[#05060f]/70 px-6 py-4 transition group-hover:bg-[#05060f]/60">
+                    <div className="flex items-center justify-between rounded-[18px] bg-black/55 px-6 py-4 transition group-hover:bg-black/65">
                       <span className="text-base font-medium">{link.title}</span>
                       <ExternalLink className="h-4 w-4 text-white/50 group-hover:text-white/80" />
                     </div>
@@ -173,7 +189,7 @@ export default async function ProfilePage(props: { params: Promise<{ username: s
             <Button
               asChild
               variant="outline"
-              className="rounded-full border-white/20 bg-white/10 px-6 py-2 text-white hover:bg-white/20"
+              className="rounded-full border-white/20 bg-white/10 px-6 py-2 text-white hover:bg-white/15"
             >
               <Link href="/auth">Crear mi minibio</Link>
             </Button>
