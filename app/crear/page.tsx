@@ -276,8 +276,26 @@ export default function CrearPage() {
 
   const glassCardClass =
     "rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-[0_25px_80px_-40px_rgba(12,15,35,0.8)]"
-  const inputClass =
+const inputClass =
     "bg-white/10 border-white/15 text-white placeholder:text-white/40 focus-visible:border-white/40 focus-visible:ring-2 focus-visible:ring-white/30"
+
+const platformLabels: Record<SocialLinkFormValue["platform"], string> = {
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  twitter: "X",
+  youtube: "YouTube",
+  linkedin: "LinkedIn",
+  email: "Email",
+}
+
+const platformPlaceholders: Record<SocialLinkFormValue["platform"], string> = {
+  instagram: "https://instagram.com/usuario",
+  tiktok: "https://www.tiktok.com/@usuario",
+  twitter: "https://x.com/usuario",
+  youtube: "https://youtube.com/@usuario",
+  linkedin: "https://linkedin.com/in/usuario",
+  email: "tuemail@dominio.com",
+}
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#05060f] text-white">
@@ -400,14 +418,14 @@ export default function CrearPage() {
               <div className="grid gap-4">
                 {socialLinks.map((link) => (
                   <div key={link.platform} className="space-y-2">
-                    <Label htmlFor={link.platform} className="capitalize text-xs text-white/50">
-                      {link.platform}
+                    <Label htmlFor={link.platform} className="text-xs text-white/50">
+                      {platformLabels[link.platform] ?? link.platform}
                     </Label>
                     <Input
                       id={link.platform}
                       value={link.url}
                       onChange={(event) => updateSocialLink(link.platform, event.target.value)}
-                      placeholder="https://..."
+                      placeholder={platformPlaceholders[link.platform] ?? "https://..."}
                       className={inputClass}
                     />
                   </div>
