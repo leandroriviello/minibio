@@ -5,7 +5,7 @@ import type React from "react"
 import { use, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Loader2, Plus, Trash2, Upload } from "lucide-react"
+import { ArrowLeft, Loader2, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -14,12 +14,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { fileToDataUrl } from "@/lib/files"
 import { createEmptySocialLinks, type SocialLinkFormValue } from "@/lib/social-links"
 import { cn } from "@/lib/utils"
-
-interface CustomLink {
-  id: string
-  title: string
-  url: string
-}
+import { CustomSocialLinks, type CustomSocialLink } from "@/components/custom-social-links"
+import { CustomLinks, type CustomLink } from "@/components/custom-links-improved"
 
 interface Profile {
   username: string
@@ -27,6 +23,7 @@ interface Profile {
   bio: string | null
   profile_image_url: string | null
   social_links: Record<string, string>
+  custom_social_links: Array<{ id: string; platform: string; name: string; url: string; icon: string }>
   custom_links: Array<{ title: string; url: string }>
   user_id: string | null
 }
@@ -45,6 +42,7 @@ export default function EditarPage(props: { params: Promise<{ username: string }
   const [bio, setBio] = useState("")
   const [profileImage, setProfileImage] = useState<string>("")
   const [socialLinks, setSocialLinks] = useState<SocialLinkFormValue[]>(createEmptySocialLinks)
+  const [customSocialLinks, setCustomSocialLinks] = useState<CustomSocialLink[]>([])
   const [customLinks, setCustomLinks] = useState<CustomLink[]>([])
 
   useEffect(() => {
@@ -72,8 +70,13 @@ export default function EditarPage(props: { params: Promise<{ username: string }
             url: profile.social_links[link.platform] || "",
           })),
         )
+        setCustomSocialLinks(profile.custom_social_links || [])
         setCustomLinks(
-          (profile.custom_links || []).map((link, index) => ({ ...link, id: `${Date.now()}-${index}` })),
+          (profile.custom_links || []).map((link, index) => ({ 
+            id: `${Date.now()}-${index}`, 
+            title: link.title, 
+            url: link.url 
+          })),
         )
       } catch (error) {
         console.error("Error loading profile:", error)
@@ -109,18 +112,6 @@ export default function EditarPage(props: { params: Promise<{ username: string }
     }
   }
 
-  const addCustomLink = () => {
-    setCustomLinks((prev) => [...prev, { id: Date.now().toString(), title: "", url: "" }])
-  }
-
-  const removeCustomLink = (id: string) => {
-    setCustomLinks((prev) => prev.filter((link) => link.id !== id))
-  }
-
-  const updateCustomLink = (id: string, field: "title" | "url", value: string) => {
-    setCustomLinks((prev) => prev.map((link) => (link.id === id ? { ...link, [field]: value } : link)))
-  }
-
   const updateSocialLink = (platform: string, url: string) => {
     setSocialLinks((prev) => prev.map((link) => (link.platform === platform ? { ...link, url } : link)))
   }
@@ -147,6 +138,7 @@ export default function EditarPage(props: { params: Promise<{ username: string }
           social_links: Object.fromEntries(
             socialLinks.filter((link) => link.url).map((link) => [link.platform, link.url]),
           ),
+          custom_social_links: customSocialLinks.filter((link) => link.name && link.url),
           custom_links: customLinks
             .filter((link) => link.title && link.url)
             .map((link) => ({ title: link.title, url: link.url })),
@@ -320,82 +312,19 @@ const platformPlaceholders: Record<SocialLinkFormValue["platform"], string> = {
               </div>
             </Card>
 
-            <Card className={cn(glassCardClass, "p-8 space-y-5")}>
-              <div className="flex items-center justify-between">
-                <Label className="text-white/70">Redes sociales</Label>
-                <p className="text-xs text-white/45">Mostrá solo las redes que quieras destacar</p>
-              </div>
-              <div className="grid gap-4">
-                {socialLinks.map((link) => (
-                  <div key={link.platform} className="space-y-2">
-                    <Label htmlFor={link.platform} className="text-xs text-white/50">
-                      {platformLabels[link.platform] ?? link.platform}
-                    </Label>
-                    <Input
-                      id={link.platform}
-                      value={link.url}
-                      onChange={(event) => updateSocialLink(link.platform, event.target.value)}
-                      placeholder={platformPlaceholders[link.platform] ?? "https://..."}
-                      className={inputClass}
-                    />
-                  </div>
-                ))}
-              </div>
-            </Card>
+            <CustomLinks
+              customLinks={customLinks}
+              onUpdateCustomLinks={setCustomLinks}
+              glassCardClass={glassCardClass}
+              inputClass={inputClass}
+            />
 
-            <Card className={cn(glassCardClass, "p-8 space-y-6")}>
-              <div className="flex items-center justify-between">
-                <Label className="text-white/70">Enlaces personalizados</Label>
-                <Button
-                  type="button"
-                  onClick={addCustomLink}
-                  className="rounded-full border border-white/20 bg-white/10 text-white/80 hover:bg-white/20"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Agregar enlace
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                {customLinks.map((link) => (
-                  <div
-                    key={link.id}
-                    className="rounded-2xl border border-white/12 bg-white/6 p-4 backdrop-blur-2xl shadow-inner"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 space-y-3">
-                        <Input
-                          value={link.title}
-                          onChange={(event) => updateCustomLink(link.id, "title", event.target.value)}
-                          placeholder="Título del enlace"
-                          className={inputClass}
-                        />
-                        <Input
-                          value={link.url}
-                          onChange={(event) => updateCustomLink(link.id, "url", event.target.value)}
-                          placeholder="https://..."
-                          className={inputClass}
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeCustomLink(link.id)}
-                        className="mt-1 text-white/60 hover:text-white"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                {customLinks.length === 0 ? (
-                  <p className="text-xs text-white/40">
-                    Sumá botones a tus proyectos, tiendas o landing pages favoritas.
-                  </p>
-                ) : null}
-              </div>
-            </Card>
+            <CustomSocialLinks
+              socialLinks={customSocialLinks}
+              onUpdateSocialLinks={setCustomSocialLinks}
+              glassCardClass={glassCardClass}
+              inputClass={inputClass}
+            />
 
             <Button
               type="submit"

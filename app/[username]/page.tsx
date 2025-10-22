@@ -85,6 +85,16 @@ export default async function ProfilePage(props: { params: Promise<{ username: s
       icon: socialIcons[platform] || <ExternalLink className="h-5 w-5" />,
     }))
 
+  // Agregar redes sociales personalizadas
+  const customSocialLinks = (profile.custom_social_links || []).map((link) => ({
+    platform: link.platform,
+    url: link.url,
+    icon: <span className="text-lg">{link.icon}</span>,
+    name: link.name,
+  }))
+
+  const allSocialLinks = [...socialLinks, ...customSocialLinks]
+
   const glassCardClass =
     "rounded-3xl border border-white/10 bg-[#101013]/70 backdrop-blur-2xl shadow-[0_45px_120px_-70px_rgba(0,0,0,0.85)]"
 
@@ -140,34 +150,6 @@ export default async function ProfilePage(props: { params: Promise<{ username: s
             )}
           </Card>
 
-          {socialLinks.length > 0 ? (
-            <Card className={cn(glassCardClass, "p-8 space-y-5")}>
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Conectá en redes</h2>
-                <span className="text-xs uppercase tracking-[0.4em] text-white/40">Social</span>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {socialLinks.map((link) => (
-                  <a
-                    key={link.platform}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center justify-between rounded-2xl border border-white/15 bg-white/8 px-5 py-4 text-left transition hover:bg-white/16"
-                  >
-                    <div className="flex items-center gap-3 text-sm font-medium">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white group-hover:bg-white/20">
-                        {link.icon}
-                      </span>
-                      {socialLabels[link.platform] ?? link.platform}
-                    </div>
-                    <ExternalLink className="h-4 w-4 text-white/50 group-hover:text-white/80" />
-                  </a>
-                ))}
-              </div>
-            </Card>
-          ) : null}
-
           {profile.custom_links && profile.custom_links.length > 0 ? (
             <Card className={cn(glassCardClass, "p-8 space-y-5")}>
               <div className="flex items-center justify-between">
@@ -193,8 +175,35 @@ export default async function ProfilePage(props: { params: Promise<{ username: s
             </Card>
           ) : null}
 
-          <footer className="text-center space-y-4">
-            <p className="text-sm text-white/50">¿Querés un perfil así de elegante?</p>
+          {allSocialLinks.length > 0 ? (
+            <Card className={cn(glassCardClass, "p-8 space-y-5")}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Conectá en redes</h2>
+                <span className="text-xs uppercase tracking-[0.4em] text-white/40">Social</span>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {allSocialLinks.map((link, index) => (
+                  <a
+                    key={`${link.platform}-${index}`}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center justify-between rounded-2xl border border-white/15 bg-white/8 px-5 py-4 text-left transition hover:bg-white/16"
+                  >
+                    <div className="flex items-center gap-3 text-sm font-medium">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white group-hover:bg-white/20">
+                        {link.icon}
+                      </span>
+                      {'name' in link ? link.name : (socialLabels[link.platform] ?? link.platform)}
+                    </div>
+                    <ExternalLink className="h-4 w-4 text-white/50 group-hover:text-white/80" />
+                  </a>
+                ))}
+              </div>
+            </Card>
+          ) : null}
+
+          <footer className="text-center">
             <Button
               asChild
               variant="outline"

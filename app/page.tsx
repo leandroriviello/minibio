@@ -39,7 +39,7 @@ export default function HomePage() {
               <Button
                 variant="outline"
                 size="lg"
-                className="w-full rounded-full border-white/20 bg-white/10 text-white shadow-[0_20px_40px_-30px_rgba(0,0,0,0.7)] hover:bg-white/15"
+                className="w-full rounded-full border-white/20 bg-white/10 text-white shadow-[0_20px_40px_-30px_rgba(0,0,0,0.7)] transition-all duration-300 hover:scale-105 hover:bg-white/20 hover:text-white hover:border-white/30 hover:shadow-[0_25px_60px_-20px_rgba(0,0,0,0.8)] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/30"
               >
                 Ver ejemplo
               </Button>

@@ -62,8 +62,13 @@ export default async function AuthLandingPage({
 
           <div className="text-center text-sm text-white/35">
             ¿Tenés dudas?{" "}
-            <a href="mailto:hola@minibio.app" className="text-white/60 underline underline-offset-4 hover:text-white/80 transition-colors">
-              Escribinos
+            <a
+              href="https://www.instagram.com/leandroriviello"
+              target="_blank"
+              rel="noreferrer"
+              className="text-white/60 underline underline-offset-4 hover:text-white/80 transition-colors"
+            >
+              Contáctame
             </a>
           </div>
         </div>

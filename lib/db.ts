@@ -70,6 +70,7 @@ export interface Profile {
   bio: string | null
   profile_image_url: string | null
   social_links: Record<string, string>
+  custom_social_links: Array<{ id: string; platform: string; name: string; url: string; icon: string }>
   custom_links: CustomLink[]
   created_at: string
   updated_at: string
@@ -221,6 +222,7 @@ export async function createProfile(data: {
   bio?: string
   profile_image_url?: string
   social_links: Record<string, string>
+  custom_social_links: Array<{ id: string; platform: string; name: string; url: string; icon: string }>
   custom_links: CustomLink[]
 }): Promise<Profile | null> {
   await initializeDatabase()
@@ -239,8 +241,8 @@ export async function createProfile(data: {
     const userId = data.userId ?? null
 
     const result = await pool.query<Profile>(
-      `INSERT INTO profiles (user_id, username, display_name, bio, profile_image_url, social_links, custom_links)
-       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb)
+      `INSERT INTO profiles (user_id, username, display_name, bio, profile_image_url, social_links, custom_social_links, custom_links)
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb)
        RETURNING *`,
       [
         userId,
@@ -249,6 +251,7 @@ export async function createProfile(data: {
         data.bio || null,
         data.profile_image_url || null,
         JSON.stringify(data.social_links),
+        JSON.stringify(data.custom_social_links),
         JSON.stringify(data.custom_links),
       ],
     )
@@ -268,6 +271,7 @@ export async function updateProfile(
     bio?: string
     profile_image_url?: string
     social_links: Record<string, string>
+    custom_social_links: Array<{ id: string; platform: string; name: string; url: string; icon: string }>
     custom_links: CustomLink[]
   },
 ): Promise<Profile | null> {
@@ -293,17 +297,19 @@ export async function updateProfile(
          bio = $2,
          profile_image_url = $3,
          social_links = $4::jsonb,
-         custom_links = $5::jsonb,
+         custom_social_links = $5::jsonb,
+         custom_links = $6::jsonb,
          updated_at = NOW(),
-         user_id = COALESCE(user_id, $7)
-       WHERE username = $6
-         AND ($7::uuid IS NULL OR user_id = $7 OR user_id IS NULL)
+         user_id = COALESCE(user_id, $8)
+       WHERE username = $7
+         AND ($8::uuid IS NULL OR user_id = $8 OR user_id IS NULL)
        RETURNING *`,
       [
         data.display_name,
         data.bio || null,
         data.profile_image_url || null,
         JSON.stringify(data.social_links),
+        JSON.stringify(data.custom_social_links),
         JSON.stringify(data.custom_links),
         username,
         ownerId,
