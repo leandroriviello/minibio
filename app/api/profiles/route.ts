@@ -9,6 +9,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
+    const body = await request.json()
     const { username, display_name, bio, profile_image_url, social_links, custom_social_links, custom_links } = body
 
     const existing = await getProfileByUsername(username)
@@ -98,6 +99,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
+    const body = await request.json()
     const { username, display_name, bio, profile_image_url, social_links, custom_social_links, custom_links } = body
 
     if (!username) {

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, X, ExternalLink } from "lucide-react"
+import { Plus, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 // Íconos disponibles para las redes sociales
@@ -90,11 +90,6 @@ export function CustomSocialLinks({
         link.id === id ? { ...link, [field]: value } : link
       )
     )
-  }
-
-  const getIconEmoji = (iconValue: string) => {
-    const iconData = availableIcons.find(icon => icon.value === iconValue)
-    return iconData?.icon || "🔗"
   }
 
   return (

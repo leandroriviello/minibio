@@ -249,7 +249,7 @@ export function CustomLinks({
         {searchTerm && filteredLinks.length === 0 && (
           <div className="text-center py-8">
             <p className="text-sm text-white/40">
-              No se encontraron enlaces que coincidan con "{searchTerm}"
+              No se encontraron enlaces que coincidan con &quot;{searchTerm}&quot;
             </p>
           </div>
         )}

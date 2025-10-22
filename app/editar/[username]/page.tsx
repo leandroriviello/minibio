@@ -112,10 +112,6 @@ export default function EditarPage(props: { params: Promise<{ username: string }
     }
   }
 
-  const updateSocialLink = (platform: string, url: string) => {
-    setSocialLinks((prev) => prev.map((link) => (link.platform === platform ? { ...link, url } : link)))
-  }
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
 
@@ -177,24 +173,6 @@ export default function EditarPage(props: { params: Promise<{ username: string }
     "rounded-3xl border border-white/10 bg-[#101013]/70 backdrop-blur-2xl shadow-[0_25px_70px_-40px_rgba(0,0,0,0.85)]"
   const inputClass =
     "bg-white/8 border-white/15 text-white placeholder:text-white/40 focus-visible:border-white/35 focus-visible:ring-2 focus-visible:ring-white/20"
-
-const platformLabels: Record<SocialLinkFormValue["platform"], string> = {
-  instagram: "Instagram",
-  tiktok: "TikTok",
-  twitter: "X",
-  youtube: "YouTube",
-  linkedin: "LinkedIn",
-  email: "Email",
-}
-
-const platformPlaceholders: Record<SocialLinkFormValue["platform"], string> = {
-  instagram: "https://instagram.com/usuario",
-  tiktok: "https://www.tiktok.com/@usuario",
-  twitter: "https://x.com/usuario",
-  youtube: "https://youtube.com/@usuario",
-  linkedin: "https://linkedin.com/in/usuario",
-  email: "tuemail@dominio.com",
-}
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0c0c0f] text-white">
