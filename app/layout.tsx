@@ -19,6 +19,10 @@ export const metadata: Metadata = {
   title: "minibio | Tu perfil link-in-bio personalizable",
   description: "Crea y comparte tu minibio en segundos con enlaces y redes sociales.",
   applicationName: "minibio",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/favicon.ico"
+  }
 }
 
 export default function RootLayout({

@@ -76,7 +76,7 @@ export default function EditarPage(props: { params: Promise<{ username: string }
             id: `${Date.now()}-${index}`, 
             title: link.title, 
             url: link.url,
-            icon: "🔗"
+            icon: "⭐"
           })),
         )
       } catch (error) {

@@ -96,7 +96,7 @@ export default function CrearPage() {
               id: `${Date.now()}-${index}`, 
               title: link.title, 
               url: link.url,
-              icon: "🔗"
+              icon: "⭐"
             })),
           )
           setUsernameStatus("owned")

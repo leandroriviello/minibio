@@ -86,7 +86,7 @@ export function CustomLinks({
       id: Date.now().toString(),
       title: "",
       url: "",
-      icon: "🔗"
+      icon: "⭐"
     }
     onUpdateCustomLinks([...customLinks, newLink])
     setIsEditing(true)
