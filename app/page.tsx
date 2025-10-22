@@ -21,8 +21,7 @@ export default function HomePage() {
           <div className="space-y-4">
             <h1 className="text-5xl font-semibold tracking-tight">minibio</h1>
             <p className="text-white/60 text-base md:text-lg">
-              Diseñá una tarjeta personal elegante y compartila en segundos. Un look “liquid glass” para tu
-              presencia online.
+              Tu tarjeta personal, simple.
             </p>
           </div>
 
@@ -30,7 +29,7 @@ export default function HomePage() {
             <Link href="/auth">
               <Button
                 size="lg"
-                className="w-full rounded-full bg-gradient-to-r from-[#4d4d50] via-[#1e1e20] to-[#4d4d50] text-white shadow-[0_20px_60px_-30px_rgba(0,0,0,0.85)] transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/30"
+                className="w-full rounded-full bg-gradient-to-r from-[#4d4d50] via-[#1e1e20] to-[#4d4d50] text-white shadow-[0_20px_60px_-30px_rgba(0,0,0,0.85)] transition-all duration-300 hover:scale-105 hover:shadow-[0_25px_80px_-20px_rgba(0,0,0,0.9)] hover:from-[#5a5a5d] hover:via-[#2a2a2d] hover:to-[#5a5a5d] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/30"
               >
                 Crear mi minibio
               </Button>
@@ -46,8 +45,6 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-
-          <p className="text-xs uppercase tracking-[0.3em] text-white/35">made in buenos aires · 2025</p>
         </Card>
       </div>
     </div>
