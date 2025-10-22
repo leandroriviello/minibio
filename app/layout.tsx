@@ -20,8 +20,8 @@ export const metadata: Metadata = {
   description: "Crea y comparte tu minibio en segundos con enlaces y redes sociales.",
   applicationName: "minibio",
   icons: {
-    icon: "/favicon.ico",
-    apple: "/favicon.ico"
+    icon: "/icon.svg",
+    apple: "/icon.svg"
   }
 }
 
