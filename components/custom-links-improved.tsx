@@ -35,6 +35,8 @@ const availableIcons = [
   { value: "heart", label: "Favorito", icon: "❤️" },
   { value: "fire", label: "Trending", icon: "🔥" },
   { value: "rocket", label: "Lanzamiento", icon: "🚀" },
+  { value: "profile", label: "Mi perfil", icon: "👤" },
+  { value: "webpage", label: "Página web", icon: "📄" },
 ]
 
 export interface CustomLink {
@@ -210,18 +212,21 @@ export function CustomLinks({
                   <>
                     <div className="flex items-center gap-2">
                       <Select value={link.icon} onValueChange={(value) => updateCustomLink(link.id, "icon", value)}>
-                        <SelectTrigger className="w-16 h-8 bg-white/10 border-white/20 text-white">
+                        <SelectTrigger className="w-12 h-8 bg-white/10 border-white/20 text-white">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#101013] border-white/10">
-                          {availableIcons.map((icon) => (
-                            <SelectItem key={icon.value} value={icon.icon} className="text-white hover:bg-white/10">
-                              <div className="flex items-center gap-2">
-                                <span>{icon.icon}</span>
-                                <span>{icon.label}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
+                        <SelectContent className="bg-[#101013] border-white/10 max-h-60 overflow-y-auto">
+                          <div className="grid grid-cols-6 gap-1 p-2">
+                            {availableIcons.map((icon) => (
+                              <SelectItem 
+                                key={icon.value} 
+                                value={icon.icon} 
+                                className="text-white hover:bg-white/10 p-2 h-10 w-10 flex items-center justify-center"
+                              >
+                                <span className="text-lg">{icon.icon}</span>
+                              </SelectItem>
+                            ))}
+                          </div>
                         </SelectContent>
                       </Select>
                       <Input
@@ -297,7 +302,7 @@ export function CustomLinks({
               type="button"
               onClick={addCustomLink}
               variant="outline"
-              className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+              className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
             >
               <Plus className="mr-2 h-4 w-4" />
               Agregar tu primer enlace
