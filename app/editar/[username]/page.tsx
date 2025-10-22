@@ -75,7 +75,8 @@ export default function EditarPage(props: { params: Promise<{ username: string }
           (profile.custom_links || []).map((link, index) => ({ 
             id: `${Date.now()}-${index}`, 
             title: link.title, 
-            url: link.url 
+            url: link.url,
+            icon: "🔗"
           })),
         )
       } catch (error) {

@@ -95,7 +95,8 @@ export default function CrearPage() {
             (profile.custom_links || []).map((link, index) => ({ 
               id: `${Date.now()}-${index}`, 
               title: link.title, 
-              url: link.url 
+              url: link.url,
+              icon: "🔗"
             })),
           )
           setUsernameStatus("owned")
@@ -285,11 +286,7 @@ export default function CrearPage() {
       <div className="relative z-10 px-4 py-12 md:px-8 md:py-16">
         <div className="mx-auto w-full max-w-3xl space-y-10">
           <header className="text-center space-y-3">
-            <h1 className="text-4xl font-semibold md:text-5xl">Diseñá tu tarjeta digital</h1>
-            <p className="mx-auto max-w-2xl text-white/60">
-              Personalizá tu presencia online con un perfil tipo “liquid glass”: estilo elegante, animado y
-              listo para compartir.
-            </p>
+            <h1 className="text-4xl font-semibold md:text-5xl">minibio</h1>
           </header>
 
           <form onSubmit={handleSubmit} className="space-y-8">

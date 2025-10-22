@@ -6,12 +6,42 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Plus, Trash2, GripVertical, Search, ExternalLink } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+
+// Íconos disponibles para los enlaces
+const availableIcons = [
+  { value: "link", label: "Enlace", icon: "🔗" },
+  { value: "website", label: "Sitio web", icon: "🌐" },
+  { value: "portfolio", label: "Portfolio", icon: "💼" },
+  { value: "blog", label: "Blog", icon: "📝" },
+  { value: "newsletter", label: "Newsletter", icon: "📧" },
+  { value: "shop", label: "Tienda", icon: "🛒" },
+  { value: "app", label: "App", icon: "📱" },
+  { value: "tool", label: "Herramienta", icon: "🛠️" },
+  { value: "game", label: "Juego", icon: "🎮" },
+  { value: "music", label: "Música", icon: "🎵" },
+  { value: "video", label: "Video", icon: "🎬" },
+  { value: "book", label: "Libro", icon: "📚" },
+  { value: "course", label: "Curso", icon: "🎓" },
+  { value: "event", label: "Evento", icon: "📅" },
+  { value: "community", label: "Comunidad", icon: "👥" },
+  { value: "support", label: "Soporte", icon: "🆘" },
+  { value: "contact", label: "Contacto", icon: "📞" },
+  { value: "about", label: "Acerca de", icon: "ℹ️" },
+  { value: "gallery", label: "Galería", icon: "🖼️" },
+  { value: "download", label: "Descarga", icon: "⬇️" },
+  { value: "star", label: "Destacado", icon: "⭐" },
+  { value: "heart", label: "Favorito", icon: "❤️" },
+  { value: "fire", label: "Trending", icon: "🔥" },
+  { value: "rocket", label: "Lanzamiento", icon: "🚀" },
+]
 
 export interface CustomLink {
   id: string
   title: string
   url: string
+  icon: string
 }
 
 interface CustomLinksProps {
@@ -53,7 +83,8 @@ export function CustomLinks({
     const newLink: CustomLink = {
       id: Date.now().toString(),
       title: "",
-      url: ""
+      url: "",
+      icon: "🔗"
     }
     onUpdateCustomLinks([...customLinks, newLink])
     setIsEditing(true)
@@ -99,6 +130,11 @@ export function CustomLinks({
 
   const handleDragEnd = () => {
     setDraggedIndex(null)
+  }
+
+  const truncateUrl = (url: string, maxLength: number = 50) => {
+    if (url.length <= maxLength) return url
+    return url.substring(0, maxLength) + "..."
   }
 
   const hasMoreLinks = filteredLinks.length > 5 && !showAll && !isEditing
@@ -163,21 +199,38 @@ export function CustomLinks({
             <div className="flex items-start gap-3">
               {/* Drag handle - solo visible en modo edición */}
               {isEditing && (
-                <div className="flex items-center justify-center h-10 w-6 text-white/40 group-hover:text-white/60 transition-colors cursor-grab active:cursor-grabbing">
+                <div className="flex items-center justify-center h-10 w-6 text-white/40 group-hover:text-white/60 transition-colors cursor-grab active:cursor-grabbing flex-shrink-0">
                   <GripVertical className="h-4 w-4" />
                 </div>
               )}
 
               {/* Contenido del enlace */}
-              <div className="flex-1 space-y-3">
+              <div className="flex-1 space-y-3 min-w-0">
                 {isEditing ? (
                   <>
-                    <Input
-                      value={link.title}
-                      onChange={(event) => updateCustomLink(link.id, "title", event.target.value)}
-                      placeholder="Título del enlace"
-                      className={inputClass}
-                    />
+                    <div className="flex items-center gap-2">
+                      <Select value={link.icon} onValueChange={(value) => updateCustomLink(link.id, "icon", value)}>
+                        <SelectTrigger className="w-16 h-8 bg-white/10 border-white/20 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#101013] border-white/10">
+                          {availableIcons.map((icon) => (
+                            <SelectItem key={icon.value} value={icon.icon} className="text-white hover:bg-white/10">
+                              <div className="flex items-center gap-2">
+                                <span>{icon.icon}</span>
+                                <span>{icon.label}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        value={link.title}
+                        onChange={(event) => updateCustomLink(link.id, "title", event.target.value)}
+                        placeholder="Título del enlace"
+                        className={inputClass}
+                      />
+                    </div>
                     <Input
                       value={link.url}
                       onChange={(event) => updateCustomLink(link.id, "url", event.target.value)}
@@ -187,14 +240,21 @@ export function CustomLinks({
                   </>
                 ) : (
                   <>
-                    <div className="text-sm font-medium text-white">{link.title}</div>
-                    <div className="text-xs text-white/60 truncate">{link.url}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{link.icon}</span>
+                      <div className="text-sm font-medium text-white">{link.title}</div>
+                    </div>
+                    <div className="text-xs text-white/60 break-all overflow-hidden">
+                      <span className="inline-block max-w-full truncate" title={link.url}>
+                        {truncateUrl(link.url)}
+                      </span>
+                    </div>
                   </>
                 )}
               </div>
 
               {/* Botones de acción */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {!isEditing && (
                   <a
                     href={link.url}
