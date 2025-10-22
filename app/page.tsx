@@ -29,7 +29,7 @@ export default function HomePage() {
             <Link href="/auth">
               <Button
                 size="lg"
-                className="w-full rounded-full bg-gradient-to-r from-[#4d4d50] via-[#1e1e20] to-[#4d4d50] text-white shadow-[0_20px_60px_-30px_rgba(0,0,0,0.85)] transition-all duration-300 hover:scale-105 hover:shadow-[0_25px_80px_-20px_rgba(0,0,0,0.9)] hover:from-[#5a5a5d] hover:via-[#2a2a2d] hover:to-[#5a5a5d] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/30"
+                className="w-full rounded-full bg-gradient-to-r from-[#4d4d50] via-[#1e1e20] to-[#4d4d50] text-white shadow-[0_20px_60px_-30px_rgba(0,0,0,0.85)] transition-all duration-300 hover:scale-105 hover:shadow-[0_25px_80px_-20px_rgba(0,0,0,0.9)] hover:bg-gradient-to-r hover:from-[#5a5a5d] hover:via-[#2a2a2d] hover:to-[#5a5a5d] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/30"
               >
                 Crear mi minibio
               </Button>
