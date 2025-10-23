@@ -142,6 +142,7 @@ async function initializeDatabase() {
         bio TEXT,
         profile_image_url TEXT,
         social_links JSONB DEFAULT '{}'::jsonb,
+        custom_social_links JSONB DEFAULT '[]'::jsonb,
         custom_links JSONB DEFAULT '[]'::jsonb,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -152,6 +153,11 @@ async function initializeDatabase() {
     await pool.query(`
       ALTER TABLE profiles
       ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE SET NULL
+    `)
+
+    await pool.query(`
+      ALTER TABLE profiles
+      ADD COLUMN IF NOT EXISTS custom_social_links JSONB DEFAULT '[]'::jsonb
     `)
 
     await pool.query(`
@@ -240,21 +246,21 @@ export async function createProfile(data: {
 
     const userId = data.userId ?? null
 
-    const result = await pool.query<Profile>(
-      `INSERT INTO profiles (user_id, username, display_name, bio, profile_image_url, social_links, custom_social_links, custom_links)
-       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb)
-       RETURNING *`,
-      [
-        userId,
-        data.username,
-        data.display_name,
-        data.bio || null,
-        data.profile_image_url || null,
-        JSON.stringify(data.social_links),
-        JSON.stringify(data.custom_social_links),
-        JSON.stringify(data.custom_links),
-      ],
-    )
+    const query = `INSERT INTO profiles (user_id, username, display_name, bio, profile_image_url, social_links, custom_social_links, custom_links)
+                   VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb)
+                   RETURNING *`
+    const params = [
+      userId,
+      data.username,
+      data.display_name,
+      data.bio || null,
+      data.profile_image_url || null,
+      JSON.stringify(data.social_links),
+      JSON.stringify(data.custom_social_links),
+      JSON.stringify(data.custom_links),
+    ]
+
+    const result = await pool.query<Profile>(query, params)
 
     return result.rows[0] ?? null
   } catch (error) {
@@ -290,31 +296,31 @@ export async function updateProfile(
       return null
     }
 
-    const result = await pool.query<Profile>(
-      `UPDATE profiles
-       SET 
-         display_name = $1,
-         bio = $2,
-         profile_image_url = $3,
-         social_links = $4::jsonb,
-         custom_social_links = $5::jsonb,
-         custom_links = $6::jsonb,
-         updated_at = NOW(),
-         user_id = COALESCE(user_id, $8)
-       WHERE username = $7
-         AND ($8::uuid IS NULL OR user_id = $8 OR user_id IS NULL)
-       RETURNING *`,
-      [
-        data.display_name,
-        data.bio || null,
-        data.profile_image_url || null,
-        JSON.stringify(data.social_links),
-        JSON.stringify(data.custom_social_links),
-        JSON.stringify(data.custom_links),
-        username,
-        ownerId,
-      ],
-    )
+    const query = `UPDATE profiles
+                   SET 
+                     display_name = $1,
+                     bio = $2,
+                     profile_image_url = $3,
+                     social_links = $4::jsonb,
+                     custom_social_links = $5::jsonb,
+                     custom_links = $6::jsonb,
+                     updated_at = NOW(),
+                     user_id = COALESCE(user_id, $8)
+                   WHERE username = $7
+                     AND ($8::uuid IS NULL OR user_id = $8 OR user_id IS NULL)
+                   RETURNING *`
+    const params = [
+      data.display_name,
+      data.bio || null,
+      data.profile_image_url || null,
+      JSON.stringify(data.social_links),
+      JSON.stringify(data.custom_social_links),
+      JSON.stringify(data.custom_links),
+      username,
+      ownerId,
+    ]
+
+    const result = await pool.query<Profile>(query, params)
 
     return result.rows[0] ?? null
   } catch (error) {
