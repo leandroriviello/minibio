@@ -5,10 +5,32 @@ import { cookies } from "next/headers"
 import { notFound, redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Instagram, Youtube, Linkedin, Mail, ExternalLink } from "lucide-react"
+import { Instagram, Youtube, Linkedin, Mail, ExternalLink, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getProfileByUsername } from "@/lib/db"
 import { verifySessionToken } from "@/lib/session"
+import { 
+  FaInstagram, 
+  FaTiktok, 
+  FaTwitter, 
+  FaYoutube, 
+  FaLinkedin, 
+  FaGithub, 
+  FaDiscord, 
+  FaTwitch, 
+  FaSpotify, 
+  FaTelegram, 
+  FaWhatsapp, 
+  FaFacebook, 
+  FaSnapchat, 
+  FaPinterest, 
+  FaReddit, 
+  FaBehance, 
+  FaDribbble, 
+  FaMedium, 
+  FaPatreon 
+} from "react-icons/fa"
+import { HiMail } from "react-icons/hi"
 
 interface SocialLink {
   platform: string
@@ -27,6 +49,31 @@ const XIcon = () => (
     <path d="M4.5 3.75h3.27l4.02 5.35 4.53-5.35h3.18l-6.21 7.28 6.61 9.22h-3.27l-4.35-6.04-5.13 6.04H4.88l6.48-7.62-6.86-8.88Z" />
   </svg>
 )
+
+// Mapeo de íconos para redes sociales personalizadas
+const customSocialIconsMap: Record<string, React.ReactNode> = {
+  instagram: <FaInstagram className="h-5 w-5" />,
+  tiktok: <FaTiktok className="h-5 w-5" />,
+  twitter: <FaTwitter className="h-5 w-5" />,
+  youtube: <FaYoutube className="h-5 w-5" />,
+  linkedin: <FaLinkedin className="h-5 w-5" />,
+  email: <HiMail className="h-5 w-5" />,
+  github: <FaGithub className="h-5 w-5" />,
+  discord: <FaDiscord className="h-5 w-5" />,
+  twitch: <FaTwitch className="h-5 w-5" />,
+  spotify: <FaSpotify className="h-5 w-5" />,
+  telegram: <FaTelegram className="h-5 w-5" />,
+  whatsapp: <FaWhatsapp className="h-5 w-5" />,
+  facebook: <FaFacebook className="h-5 w-5" />,
+  snapchat: <FaSnapchat className="h-5 w-5" />,
+  pinterest: <FaPinterest className="h-5 w-5" />,
+  reddit: <FaReddit className="h-5 w-5" />,
+  behance: <FaBehance className="h-5 w-5" />,
+  dribbble: <FaDribbble className="h-5 w-5" />,
+  medium: <FaMedium className="h-5 w-5" />,
+  patreon: <FaPatreon className="h-5 w-5" />,
+  custom: <Sparkles className="h-5 w-5" />,
+}
 
 const socialIcons: Record<string, React.ReactNode> = {
   instagram: <Instagram className="h-5 w-5" />,
@@ -89,7 +136,7 @@ export default async function ProfilePage(props: { params: Promise<{ username: s
   const customSocialLinks = (profile.custom_social_links || []).map((link) => ({
     platform: link.platform,
     url: link.url,
-    icon: <span className="text-lg">{link.icon}</span>,
+    icon: customSocialIconsMap[link.platform] || customSocialIconsMap.custom,
     name: link.name,
   }))
 

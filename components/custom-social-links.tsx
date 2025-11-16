@@ -9,30 +9,78 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, X, GripVertical } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { 
+  FaInstagram, 
+  FaTiktok, 
+  FaTwitter, 
+  FaYoutube, 
+  FaLinkedin, 
+  FaGithub, 
+  FaDiscord, 
+  FaTwitch, 
+  FaSpotify, 
+  FaTelegram, 
+  FaWhatsapp, 
+  FaFacebook, 
+  FaSnapchat, 
+  FaPinterest, 
+  FaReddit, 
+  FaBehance, 
+  FaDribbble, 
+  FaMedium, 
+  FaPatreon 
+} from "react-icons/fa"
+import { HiMail } from "react-icons/hi"
+import { Sparkles } from "lucide-react"
+
+// Mapeo de plataformas a componentes de íconos
+const socialIconsMap: Record<string, React.ReactNode> = {
+  instagram: <FaInstagram className="h-5 w-5" />,
+  tiktok: <FaTiktok className="h-5 w-5" />,
+  twitter: <FaTwitter className="h-5 w-5" />,
+  youtube: <FaYoutube className="h-5 w-5" />,
+  linkedin: <FaLinkedin className="h-5 w-5" />,
+  email: <HiMail className="h-5 w-5" />,
+  github: <FaGithub className="h-5 w-5" />,
+  discord: <FaDiscord className="h-5 w-5" />,
+  twitch: <FaTwitch className="h-5 w-5" />,
+  spotify: <FaSpotify className="h-5 w-5" />,
+  telegram: <FaTelegram className="h-5 w-5" />,
+  whatsapp: <FaWhatsapp className="h-5 w-5" />,
+  facebook: <FaFacebook className="h-5 w-5" />,
+  snapchat: <FaSnapchat className="h-5 w-5" />,
+  pinterest: <FaPinterest className="h-5 w-5" />,
+  reddit: <FaReddit className="h-5 w-5" />,
+  behance: <FaBehance className="h-5 w-5" />,
+  dribbble: <FaDribbble className="h-5 w-5" />,
+  medium: <FaMedium className="h-5 w-5" />,
+  patreon: <FaPatreon className="h-5 w-5" />,
+  custom: <Sparkles className="h-5 w-5" />,
+}
 
 // Íconos disponibles para las redes sociales
 const availableIcons = [
-  { value: "instagram", label: "Instagram", icon: "📷" },
-  { value: "tiktok", label: "TikTok", icon: "🕺" },
-  { value: "twitter", label: "X (Twitter)", icon: "✖️" },
-  { value: "youtube", label: "YouTube", icon: "▶️" },
-  { value: "linkedin", label: "LinkedIn", icon: "💼" },
-  { value: "email", label: "Email", icon: "📧" },
-  { value: "github", label: "GitHub", icon: "🐙" },
-  { value: "discord", label: "Discord", icon: "💬" },
-  { value: "twitch", label: "Twitch", icon: "👾" },
-  { value: "spotify", label: "Spotify", icon: "🎵" },
-  { value: "telegram", label: "Telegram", icon: "✈️" },
-  { value: "whatsapp", label: "WhatsApp", icon: "🟢" },
-  { value: "facebook", label: "Facebook", icon: "🔵" },
-  { value: "snapchat", label: "Snapchat", icon: "👻" },
-  { value: "pinterest", label: "Pinterest", icon: "📌" },
-  { value: "reddit", label: "Reddit", icon: "👽" },
-  { value: "behance", label: "Behance", icon: "🎨" },
-  { value: "dribbble", label: "Dribbble", icon: "🏀" },
-  { value: "medium", label: "Medium", icon: "✍️" },
-  { value: "patreon", label: "Patreon", icon: "💝" },
-  { value: "custom", label: "Personalizada", icon: "✨" },
+  { value: "instagram", label: "Instagram", icon: socialIconsMap.instagram },
+  { value: "tiktok", label: "TikTok", icon: socialIconsMap.tiktok },
+  { value: "twitter", label: "X (Twitter)", icon: socialIconsMap.twitter },
+  { value: "youtube", label: "YouTube", icon: socialIconsMap.youtube },
+  { value: "linkedin", label: "LinkedIn", icon: socialIconsMap.linkedin },
+  { value: "email", label: "Email", icon: socialIconsMap.email },
+  { value: "github", label: "GitHub", icon: socialIconsMap.github },
+  { value: "discord", label: "Discord", icon: socialIconsMap.discord },
+  { value: "twitch", label: "Twitch", icon: socialIconsMap.twitch },
+  { value: "spotify", label: "Spotify", icon: socialIconsMap.spotify },
+  { value: "telegram", label: "Telegram", icon: socialIconsMap.telegram },
+  { value: "whatsapp", label: "WhatsApp", icon: socialIconsMap.whatsapp },
+  { value: "facebook", label: "Facebook", icon: socialIconsMap.facebook },
+  { value: "snapchat", label: "Snapchat", icon: socialIconsMap.snapchat },
+  { value: "pinterest", label: "Pinterest", icon: socialIconsMap.pinterest },
+  { value: "reddit", label: "Reddit", icon: socialIconsMap.reddit },
+  { value: "behance", label: "Behance", icon: socialIconsMap.behance },
+  { value: "dribbble", label: "Dribbble", icon: socialIconsMap.dribbble },
+  { value: "medium", label: "Medium", icon: socialIconsMap.medium },
+  { value: "patreon", label: "Patreon", icon: socialIconsMap.patreon },
+  { value: "custom", label: "Personalizada", icon: socialIconsMap.custom },
 ]
 
 export interface CustomSocialLink {
@@ -63,7 +111,7 @@ export function CustomSocialLinks({
     platform: "",
     name: "",
     url: "",
-    icon: "📷"
+    icon: "📷" // Se mantiene para compatibilidad con la BD, pero no se usa para renderizar
   })
 
   const addCustomLink = () => {
@@ -75,7 +123,7 @@ export function CustomSocialLinks({
       platform: newLink.platform,
       name: newLink.name || selectedIcon?.label || "Red social",
       url: newLink.url,
-      icon: selectedIcon?.icon || "📷"
+      icon: "📷" // Se mantiene para compatibilidad con la BD, pero no se usa para renderizar
     }
 
     onUpdateSocialLinks([...socialLinks, link])
@@ -163,7 +211,7 @@ export function CustomSocialLinks({
                     setNewLink({
                       ...newLink,
                       platform: value,
-                      icon: iconData?.icon || "📷",
+                      icon: "📷", // Se mantiene para compatibilidad
                       name: iconData?.label || ""
                     })
                   }}>
@@ -174,7 +222,9 @@ export function CustomSocialLinks({
                       {availableIcons.map((icon) => (
                         <SelectItem key={icon.value} value={icon.value} className="text-white hover:bg-white/10">
                           <div className="flex items-center gap-2">
-                            <span>{icon.icon}</span>
+                            <span className="flex items-center justify-center text-white">
+                              {icon.icon}
+                            </span>
                             <span>{icon.label}</span>
                           </div>
                         </SelectItem>
@@ -270,7 +320,9 @@ export function CustomSocialLinks({
                 {/* Contenido de la red social */}
                 <div className="flex-1 space-y-3 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{link.icon}</span>
+                    <span className="flex items-center justify-center text-white">
+                      {socialIconsMap[link.platform] || socialIconsMap.custom}
+                    </span>
                     <div className="text-sm font-medium text-white">{link.name}</div>
                   </div>
                   <Input
